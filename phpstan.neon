@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+
+    paths:
+        - app
+        - database
+        - routes
+
+    # tests/ is excluded: Pest's closure DSL rebinds $this to the TestCase at
+    # runtime, which PHPStan cannot follow without pest-plugin-phpstan — and
+    # that plugin requires Pest 5 while this project is on Pest 4.
