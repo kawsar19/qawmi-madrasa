@@ -25,3 +25,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# mPDF generated font metrics and spike output
+/storage/app/mpdf
+/storage/app/pdf-spike.pdf
+/storage/fonts/ttfontdata
