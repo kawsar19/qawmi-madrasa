@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Central\LogoutController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,14 @@ use Illuminate\Support\Facades\Route;
 foreach (config('tenancy.central_domains') as $centralDomain) {
     Route::domain($centralDomain)->group(function () {
         Route::get('/', fn () => view('welcome'))->name('home');
+
+        Route::middleware('guest')->group(function () {
+            Route::view('/login', 'central.auth.login')->name('central.login');
+        });
+
+        Route::post('/logout', LogoutController::class)
+            ->middleware('auth')
+            ->name('central.logout');
 
         Route::prefix('admin')
             ->name('central.')

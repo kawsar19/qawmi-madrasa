@@ -4,6 +4,25 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Hind Siliguri is the Bengali face used across the UI and in PDFs
+       (see App\Services\Pdf\PdfFactory), so screen and print match. */
+    --font-sans: 'Hind Siliguri', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Per-tenant branding is injected as CSS custom properties in the public
+       site layout, so one compiled bundle serves every madrasa's colours. */
+    --color-brand-50: oklch(0.97 0.02 155);
+    --color-brand-100: oklch(0.94 0.04 155);
+    --color-brand-500: oklch(0.62 0.13 155);
+    --color-brand-600: oklch(0.54 0.12 155);
+    --color-brand-700: oklch(0.45 0.10 155);
+    --color-brand-800: oklch(0.37 0.08 155);
+    --color-brand-900: oklch(0.30 0.06 155);
+}
+
+/* বাংলা সংখ্যা ও লেখা একটু বড় দেখালে পড়তে সুবিধা হয়। */
+@layer base {
+    body {
+        font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    }
 }

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\LogoutController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,19 +17,19 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('tenant.panel')
-    ->prefix('panel')
-    ->name('tenant.')
-    ->group(function () {
-        Route::get('/', fn () => view('tenant.dashboard'))->name('dashboard');
-    });
-
-// লগইন / লগআউট — প্যানেলের বাইরে, কারণ auth middleware লাগে না।
-Route::middleware('tenant.guest')
-    ->prefix('panel')
-    ->name('tenant.')
-    ->group(function () {
+Route::prefix('panel')->name('tenant.')->group(function () {
+    // লগইন — tenancy লাগে, auth লাগে না।
+    Route::middleware(['tenant.guest', 'guest'])->group(function () {
         Route::view('/login', 'tenant.auth.login')->name('login');
     });
+
+    Route::middleware(['tenant.guest', 'auth'])->group(function () {
+        Route::post('/logout', LogoutController::class)->name('logout');
+    });
+
+    Route::middleware('tenant.panel')->group(function () {
+        Route::get('/', DashboardController::class)->name('dashboard');
+    });
+});
 
 require __DIR__.'/tenant-public.php';

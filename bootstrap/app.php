@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(function (Request $request): string {
             return tenancy()->initialized
                 ? route('tenant.login')
-                : route('home');
+                : route('central.login');
         });
 
         $middleware->alias([

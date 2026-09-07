@@ -27,7 +27,7 @@ return [
      */
     'central_domains' => explode(',', (string) env(
         'CENTRAL_DOMAINS',
-        '127.0.0.1,localhost,app.localhost'
+        'app.localhost,localhost,127.0.0.1'
     )),
 
     /**
@@ -149,7 +149,12 @@ return [
          * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => true,
+        // DISABLED: compiled Vite assets (public/build/*) are shared by every
+        // tenant, but with this on, stancl rewrites asset() URLs through
+        // /tenancy/assets/ — which also drops the port in local dev, so the
+        // stylesheet 404s and every page renders unstyled.
+        // Per-tenant files (logos, student photos) use tenant_asset() instead.
+        'asset_helper_tenancy' => false,
     ],
 
     /**

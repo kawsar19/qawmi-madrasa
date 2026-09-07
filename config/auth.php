@@ -62,8 +62,11 @@ return [
     */
 
     'providers' => [
+        // 'tenant-eloquent' is registered in AppServiceProvider. It scopes
+        // every user lookup to the current tenant, because users are unique
+        // per (tenant_id, email) rather than globally.
         'users' => [
-            'driver' => 'eloquent',
+            'driver' => 'tenant-eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models\Central;
 
 use App\Models\User;
+use Database\Factories\Central\TenantFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -29,6 +31,9 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 class Tenant extends BaseTenant
 {
     use HasDomains;
+
+    /** @use HasFactory<TenantFactory> */
+    use HasFactory;
     use SoftDeletes;
 
     public const STATUS_PENDING = 'pending';

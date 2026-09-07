@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Auth\TenantUserProvider;
 use App\Services\Academic\CurrentSession;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -23,9 +25,20 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->configureAuth();
         $this->configureModels();
         $this->configureLivewireTenancy();
         $this->registerBladeDirectives();
+    }
+
+    /**
+     * Tenant-scoped ইউজার লুকআপ রেজিস্টার করে।
+     */
+    private function configureAuth(): void
+    {
+        Auth::provider('tenant-eloquent', function ($app, array $config) {
+            return new TenantUserProvider($app['hash'], $config['model']);
+        });
     }
 
     private function configureModels(): void
