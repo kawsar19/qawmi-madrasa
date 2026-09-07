@@ -20,6 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // The `auth` middleware redirects guests to a route named "login".
+        // Ours is "tenant.login" (tenant panel) / "central.login" (super
+        // admin), so point it at the right one for the current host.
+        $middleware->redirectGuestsTo(function (Request $request): string {
+            return tenancy()->initialized
+                ? route('tenant.login')
+                : route('home');
+        });
+
         $middleware->alias([
             'super-admin' => EnsureSuperAdmin::class,
             'tenant.subscribed' => EnsureSubscriptionActive::class,
