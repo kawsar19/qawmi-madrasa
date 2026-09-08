@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'ড্যাশবোর্ড' }} — {{ tenant('name') }}</title>
+    {{-- প্রতিটি পেজ শুধু heading পাঠায়; ট্যাবের নামও সেটাই হওয়া উচিত। --}}
+    <title>{{ $title ?? $heading ?? 'ড্যাশবোর্ড' }} — {{ tenant('name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
@@ -45,7 +46,9 @@
                     ছাত্র
                 </x-panel.nav-link>
                 <x-panel.nav-link href="#">ভর্তি</x-panel.nav-link>
-                <x-panel.nav-link href="#">শিক্ষক ও কর্মচারী</x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.people.employees')" :active="request()->routeIs('tenant.people.employees')">
+                    শিক্ষক ও কর্মচারী
+                </x-panel.nav-link>
             </x-panel.nav-group>
 
             <x-panel.nav-group label="দৈনন্দিন">

@@ -48,6 +48,10 @@ Route::prefix('panel')->name('tenant.')->group(function () {
             Route::view('/students', 'tenant.people.students')
                 ->middleware('can:people.student.view')
                 ->name('students');
+
+            Route::view('/employees', 'tenant.people.employees')
+                ->middleware('can:people.employee.view')
+                ->name('employees');
         });
     });
 });

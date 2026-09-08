@@ -8,11 +8,17 @@ Full spec: [requirement.md](requirement.md)
 ## Starting a session
 
 ```bash
-php artisan migrate:fresh --seed        # rebuild + demo data (SQLite in dev)
+php artisan migrate                     # apply new migrations, keep data
 npm run build                           # or `npm run dev` for HMR
 php artisan serve --port=8000
 php artisan dev:info --port=8000        # every login URL and account
 ```
+
+> **NEVER run `migrate:fresh`, `migrate:refresh` or `db:wipe` without asking
+> the user first.** The dev database holds hand-entered work and is gitignored,
+> so a rebuild destroys it with no undo. To check that a new migration is
+> correct, `php artisan migrate` is enough. A pre-flight backup runs
+> automatically (see below), but that is a safety net, not permission.
 
 Demo password is always `password`. Logins appear in an amber box on the
 login page itself (local/testing only — never production).
@@ -30,7 +36,10 @@ A madrasa admin cannot log in on the central domain, and vice versa.
 ## Commands
 
 ```bash
-php artisan migrate:fresh --seed   # rebuild schema + demo madrasas
+php artisan migrate                # apply new migrations (keeps data)
+php artisan db:backup              # timestamped copy -> storage/backups/
+php artisan db:restore             # bring one back (interactive picker)
+php artisan migrate:fresh --seed   # DESTRUCTIVE rebuild — ask the user first
 php artisan dev:info               # login URLs and demo accounts
 php artisan tenant:create          # provision a madrasa (interactive)
 php artisan permissions:sync       # reconcile PermissionRegistry -> DB
@@ -44,6 +53,15 @@ php artisan pdf:spike              # regenerate the Bengali PDF proof
 ## Non-negotiable constraints
 
 These each cost real debugging time. Do not undo them.
+
+### Dev data
+
+- **`migrate:fresh` is destructive and the SQLite file is gitignored.** There
+  is no Time Machine, no WAL, no committed copy — a rebuild is permanent.
+  Ask before running it; use `php artisan migrate` to verify a new migration.
+- `AppServiceProvider::guardDestructiveMigrations()` takes an automatic
+  backup before `migrate:fresh` / `migrate:refresh` / `db:wipe`. Do not
+  remove it, and do not treat it as a licence to rebuild freely.
 
 ### Tenancy
 

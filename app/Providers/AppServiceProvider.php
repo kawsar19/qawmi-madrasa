@@ -8,9 +8,12 @@ use App\Auth\TenantUserProvider;
 use App\Http\Middleware\InitializeTenancyIfTenantDomain;
 use App\Http\Middleware\SetPermissionsTeam;
 use App\Services\Academic\CurrentSession;
+use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -29,6 +32,37 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configureLivewireTenancy();
         $this->registerBladeDirectives();
+        $this->guardDestructiveMigrations();
+    }
+
+    /**
+     * ধ্বংসাত্মক migration চালানোর আগে স্বয়ংক্রিয় ব্যাকআপ।
+     *
+     * `migrate:fresh` and `migrate:refresh` drop every table with no undo,
+     * and the dev SQLite file is gitignored — so a mistaken rebuild loses
+     * hand-entered data permanently. This takes a copy first, every time.
+     */
+    private function guardDestructiveMigrations(): void
+    {
+        if (! $this->app->runningInConsole() || $this->app->environment('production')) {
+            return;
+        }
+
+        Event::listen(function (CommandStarting $event): void {
+            if (! in_array($event->command, ['migrate:fresh', 'migrate:refresh', 'db:wipe'], true)) {
+                return;
+            }
+
+            $this->app['events']->forget(CommandStarting::class);
+
+            $exit = $this->app[Kernel::class]->call('db:backup');
+
+            if ($exit === 0) {
+                $event->output->writeln(
+                    '<comment>↳ চালানোর আগে ব্যাকআপ নেওয়া হয়েছে — `php artisan db:restore` দিয়ে ফেরানো যাবে।</comment>'
+                );
+            }
+        });
     }
 
     /**

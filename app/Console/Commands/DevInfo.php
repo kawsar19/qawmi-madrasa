@@ -8,6 +8,7 @@ use App\Models\Central\Domain;
 use App\Models\Central\Tenant;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * `php artisan dev:info` — সব লগইন লিংক ও ডেমো তথ্য এক জায়গায়।
@@ -65,11 +66,9 @@ class DevInfo extends Command
                 continue;
             }
 
-            $admin = User::query()->where('tenant_id', $tenant->getKey())->orderBy('id')->first();
-
             $this->line("  <options=bold>{$tenant->name}</> [{$tenant->status}]");
             $this->line("    http://{$domain}{$suffix}/panel/login");
-            $this->line('    '.($admin === null ? 'কোনো ইউজার নেই' : $admin->email));
+            $this->listTenantUsers($tenant);
         }
 
         $this->newLine();
@@ -77,5 +76,40 @@ class DevInfo extends Command
         $this->newLine();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * মাদরাসার সব লগইন অ্যাকাউন্ট, রোল সহ।
+     *
+     * Roles are read inside the tenant context: spatie/permission scopes its
+     * pivot rows by team id, which SetPermissionsTeam sets per request but
+     * no middleware runs in a console command.
+     */
+    private function listTenantUsers(Tenant $tenant): void
+    {
+        tenancy()->initialize($tenant);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getTenantKey());
+
+        /** @var list<User> $users */
+        $users = User::query()
+            ->where('tenant_id', $tenant->getKey())
+            ->with('roles')
+            ->orderBy('id')
+            ->get()
+            ->all();
+
+        tenancy()->end();
+
+        if ($users === []) {
+            $this->line('    কোনো ইউজার নেই');
+
+            return;
+        }
+
+        foreach ($users as $user) {
+            $role = $user->getRoleNames()->first();
+
+            $this->line('    '.$user->email.($role === null ? '' : "  <fg=gray>[{$role}]</>"));
+        }
     }
 }

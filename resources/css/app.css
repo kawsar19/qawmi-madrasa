@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* ইনপুট ও সিলেক্টের ব্রাউজার-ডিফল্ট চেহারা রিসেট করে, নইলে
+   border/rounded/focus ক্লাসগুলো appearance-এর নিচে চাপা পড়ে যায়। */
+@plugin '@tailwindcss/forms';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
