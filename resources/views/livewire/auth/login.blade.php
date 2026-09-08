@@ -56,4 +56,27 @@
             <span wire:loading wire:target="login">অপেক্ষা করুন…</span>
         </button>
     </form>
+
+    @if ($demoCredentials !== [])
+        <div class="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm">
+            <p class="mb-2 font-medium text-amber-900">ডেমো লগইন (শুধু ডেভেলপমেন্টে)</p>
+
+            <ul class="space-y-2">
+                @foreach ($demoCredentials as $demo)
+                    <li class="flex flex-wrap items-center gap-2">
+                        <span class="text-amber-900">{{ $demo['label'] }}:</span>
+                        <code class="rounded bg-white px-1.5 py-0.5 text-xs text-gray-800" dir="ltr">{{ $demo['email'] }}</code>
+                        <code class="rounded bg-white px-1.5 py-0.5 text-xs text-gray-800" dir="ltr">{{ $demo['password'] }}</code>
+                        <button
+                            type="button"
+                            wire:click="fillDemo(@js($demo['email']), @js($demo['password']))"
+                            class="ml-auto rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-700"
+                        >
+                            বসিয়ে দিন
+                        </button>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 </div>

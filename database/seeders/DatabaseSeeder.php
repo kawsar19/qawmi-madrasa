@@ -42,40 +42,51 @@ class DatabaseSeeder extends Seeder
         $this->seedDemoTenant();
     }
 
+    /**
+     * নমুনা মাদরাসা। সব ডেমো পাসওয়ার্ড 'password' — লগইন পেজের ডেমো বক্স
+     * এটাই ধরে নেয়।
+     */
     private function seedDemoTenant(): void
     {
-        $slug = 'darululum';
+        $demos = [
+            ['জামিয়া দারুল উলুম', 'darululum', 'হাটহাজারী, চট্টগ্রাম', 'kitab_madrasa', 'kitab'],
+            ['জামিয়া হিফজুল কুরআন', 'hifzul-quran', 'সাভার, ঢাকা', 'hifz_madrasa', 'hifz'],
+        ];
 
-        if (Tenant::where('slug', $slug)->exists()) {
-            $this->command->warn("  '{$slug}' আগেই আছে — বাদ দেওয়া হলো।");
+        foreach ($demos as [$name, $slug, $address, $preset, $type]) {
+            if (Tenant::where('slug', $slug)->exists()) {
+                $this->command->warn("  '{$slug}' আগেই আছে — বাদ দেওয়া হলো।");
 
-            return;
+                continue;
+            }
+
+            $tenant = app(TenantProvisioner::class)->provision(
+                [
+                    'name' => $name,
+                    'slug' => $slug,
+                    'madrasa_type' => $type,
+                    'address' => $address,
+                ],
+                $slug.'.'.config('tenancy.central_domains')[0],
+                [
+                    'name' => 'মুহতামিম সাহেব',
+                    'email' => "admin@{$slug}.test",
+                    'password' => 'password',
+                    'mobile' => '01712345678',
+                ],
+                $preset,
+            );
+
+            Subscription::create([
+                'tenant_id' => $tenant->getKey(),
+                'plan_id' => Plan::where('slug', 'standard')->value('id'),
+                'starts_at' => now()->toDateString(),
+                'ends_at' => now()->addYear()->toDateString(),
+                'status' => Subscription::STATUS_ACTIVE,
+            ]);
+
+            $this->command->info("  ✓ {$name} — http://{$tenant->domains()->first()->domain}/panel");
+            $this->command->line("     admin@{$slug}.test / password");
         }
-
-        $tenant = app(TenantProvisioner::class)->provision(
-            [
-                'name' => 'জামিয়া দারুল উলুম',
-                'slug' => $slug,
-                'madrasa_type' => 'kitab',
-                'address' => 'হাটহাজারী, চট্টগ্রাম',
-            ],
-            $slug.'.'.config('tenancy.central_domains')[0],
-            [
-                'name' => 'মুহতামিম সাহেব',
-                'email' => 'admin@darululum.test',
-                'password' => 'password',
-                'mobile' => '01712345678',
-            ],
-        );
-
-        Subscription::create([
-            'tenant_id' => $tenant->getKey(),
-            'plan_id' => Plan::where('slug', 'standard')->value('id'),
-            'starts_at' => now()->toDateString(),
-            'ends_at' => now()->addYear()->toDateString(),
-            'status' => Subscription::STATUS_ACTIVE,
-        ]);
-
-        $this->command->info("  ✓ নমুনা মাদরাসা: http://{$tenant->domains()->first()->domain}/panel");
     }
 }

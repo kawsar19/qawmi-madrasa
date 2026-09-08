@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -81,8 +82,55 @@ class Login extends Component
         return tenancy()->initialized ? route('tenant.dashboard') : route('central.dashboard');
     }
 
+    /**
+     * ডেমো লগইন তথ্য — শুধু local/staging-এ।
+     *
+     * Guarded on the environment, never on a config flag, so these can never
+     * be switched on in production by accident.
+     *
+     * @return list<array{label: string, email: string, password: string}>
+     */
+    public function demoCredentials(): array
+    {
+        if (! app()->environment(['local', 'testing'])) {
+            return [];
+        }
+
+        if (tenancy()->initialized) {
+            $admin = User::query()
+                ->where('tenant_id', tenant()->getTenantKey())
+                ->orderBy('id')
+                ->first();
+
+            return $admin === null ? [] : [[
+                'label' => 'মাদরাসা অ্যাডমিন',
+                'email' => $admin->email,
+                'password' => 'password',
+            ]];
+        }
+
+        $superAdmin = User::query()->whereNull('tenant_id')->orderBy('id')->first();
+
+        return $superAdmin === null ? [] : [[
+            'label' => 'সুপার অ্যাডমিন',
+            'email' => $superAdmin->email,
+            'password' => 'password',
+        ]];
+    }
+
+    /**
+     * ডেমো তথ্য দিয়ে ফর্ম পূরণ করে।
+     */
+    public function fillDemo(string $email, string $password): void
+    {
+        $this->email = $email;
+        $this->password = $password;
+    }
+
     public function render(): View
     {
-        return view('livewire.auth.login');
+        return view('livewire.auth.login', [
+            'demoCredentials' => $this->demoCredentials(),
+        ]);
     }
 }

@@ -5,10 +5,33 @@ Multi-tenant SaaS for Qawmi madrasas in Bangladesh. Laravel 13 + Livewire 3 +
 
 Full spec: [requirement.md](requirement.md)
 
+## Starting a session
+
+```bash
+php artisan migrate:fresh --seed        # rebuild + demo data (SQLite in dev)
+npm run build                           # or `npm run dev` for HMR
+php artisan serve --port=8000
+php artisan dev:info --port=8000        # every login URL and account
+```
+
+Demo password is always `password`. Logins appear in an amber box on the
+login page itself (local/testing only — never production).
+
+**Which URL to log in at.** The host decides which user pool is searched:
+
+| Who | Where |
+|---|---|
+| Super admin | `app.localhost:8000/login` |
+| Madrasa admin | `<slug>.app.localhost:8000/panel/login` |
+
+A madrasa admin cannot log in on the central domain, and vice versa.
+`*.localhost` resolves automatically on macOS — no /etc/hosts entries needed.
+
 ## Commands
 
 ```bash
-php artisan migrate:fresh          # rebuild schema (SQLite in dev)
+php artisan migrate:fresh --seed   # rebuild schema + demo madrasas
+php artisan dev:info               # login URLs and demo accounts
 php artisan tenant:create          # provision a madrasa (interactive)
 php artisan permissions:sync       # reconcile PermissionRegistry -> DB
 php artisan pdf:spike              # regenerate the Bengali PDF proof
