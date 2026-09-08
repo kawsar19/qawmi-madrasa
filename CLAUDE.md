@@ -37,6 +37,7 @@ A madrasa admin cannot log in on the central domain, and vice versa.
 
 ```bash
 php artisan migrate                # apply new migrations (keeps data)
+php artisan db:show                # browse tables, columns and data (read-only)
 php artisan db:backup              # timestamped copy -> storage/backups/
 php artisan db:restore             # bring one back (interactive picker)
 php artisan migrate:fresh --seed   # DESTRUCTIVE rebuild — ask the user first

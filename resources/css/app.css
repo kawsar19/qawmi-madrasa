@@ -26,7 +26,22 @@
 
 /* বাংলা সংখ্যা ও লেখা একটু বড় দেখালে পড়তে সুবিধা হয়। */
 @layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
     body {
         font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    }
+
+    /* মোশন কমানোর সেটিং থাকলে সম্মান করা। */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
     }
 }
