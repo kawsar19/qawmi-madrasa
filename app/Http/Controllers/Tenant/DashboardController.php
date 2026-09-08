@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Models\Academic\Kitab;
 use App\Models\Academic\Marhala;
+use App\Models\People\Student;
 use App\Services\Academic\CurrentSession;
 use Illuminate\Contracts\View\View;
 
@@ -16,9 +17,8 @@ class DashboardController
         return view('tenant.dashboard', [
             'currentSession' => $currentSession->get(),
             'stats' => [
-                // Student/employee tables arrive in Phase 1 block 3; the
-                // counts they will fill are wired up here already.
-                'students' => 0,
+                'students' => Student::query()->active()->count(),
+                // Employees arrive later in Phase 1; the count is wired here.
                 'employees' => 0,
                 'marhalas' => Marhala::count(),
                 'kitabs' => Kitab::count(),

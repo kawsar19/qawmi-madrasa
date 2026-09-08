@@ -43,6 +43,12 @@ Route::prefix('panel')->name('tenant.')->group(function () {
                 ->middleware('can:academic.jamaat.view')
                 ->name('jamaats');
         });
+
+        Route::prefix('people')->name('people.')->group(function () {
+            Route::view('/students', 'tenant.people.students')
+                ->middleware('can:people.student.view')
+                ->name('students');
+        });
     });
 });
 

@@ -41,7 +41,9 @@
             </x-panel.nav-group>
 
             <x-panel.nav-group label="ছাত্র ও শিক্ষক">
-                <x-panel.nav-link href="#">ছাত্র</x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.people.students')" :active="request()->routeIs('tenant.people.students')">
+                    ছাত্র
+                </x-panel.nav-link>
                 <x-panel.nav-link href="#">ভর্তি</x-panel.nav-link>
                 <x-panel.nav-link href="#">শিক্ষক ও কর্মচারী</x-panel.nav-link>
             </x-panel.nav-group>
