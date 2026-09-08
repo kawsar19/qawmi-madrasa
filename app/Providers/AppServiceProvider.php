@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Auth\TenantUserProvider;
+use App\Http\Middleware\InitializeTenancyIfTenantDomain;
 use App\Services\Academic\CurrentSession;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +13,6 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -58,10 +57,13 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureLivewireTenancy(): void
     {
+        // NOT PreventAccessFromCentralDomains here: Livewire has a single
+        // /livewire/update endpoint shared by the tenant panel and the
+        // super-admin panel, so blocking central hosts would 404 every
+        // super-admin interaction.
         $tenantMiddleware = [
             'web',
-            InitializeTenancyByDomain::class,
-            PreventAccessFromCentralDomains::class,
+            InitializeTenancyIfTenantDomain::class,
         ];
 
         Livewire::setUpdateRoute(

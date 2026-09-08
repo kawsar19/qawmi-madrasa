@@ -34,6 +34,7 @@ class Tenant extends BaseTenant
 
     /** @use HasFactory<TenantFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
@@ -81,6 +82,17 @@ class Tenant extends BaseTenant
         static::creating(function (self $tenant): void {
             $tenant->uuid ??= (string) Str::uuid();
         });
+    }
+
+    /**
+     * stancl's HasDomains::domains() has no return type, so static analysis
+     * cannot see the relation. Declaring it here types it properly.
+     *
+     * @return HasMany<Domain, $this>
+     */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class, 'tenant_id');
     }
 
     public function users(): HasMany

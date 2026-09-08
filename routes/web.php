@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\LogoutController;
+use App\Models\Central\Tenant;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,7 +37,17 @@ foreach (config('tenancy.central_domains') as $centralDomain) {
             ->name('central.')
             ->middleware(['auth', 'super-admin'])
             ->group(function () {
-                Route::get('/', fn () => view('central.dashboard'))->name('dashboard');
+                Route::get('/', DashboardController::class)->name('dashboard');
+
+                Route::prefix('tenants')->name('tenants.')->group(function () {
+                    Route::view('/', 'central.tenants.index')->name('index');
+                    Route::view('/create', 'central.tenants.create')->name('create');
+                    Route::get('/{tenant}/edit', fn (Tenant $tenant) => view('central.tenants.edit', ['tenant' => $tenant]))
+                        ->name('edit');
+                });
+
+                Route::view('/plans', 'central.plans.index')->name('plans.index');
+                Route::view('/subscriptions', 'central.subscriptions.index')->name('subscriptions.index');
             });
     });
 }

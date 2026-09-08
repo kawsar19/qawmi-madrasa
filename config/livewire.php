@@ -1,6 +1,6 @@
 <?php
 
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use App\Http\Middleware\InitializeTenancyIfTenantDomain;
 
 return [
 
@@ -74,7 +74,7 @@ return [
         // could land on another tenant's disk.
         'middleware' => [
             'throttle:60,1',
-            InitializeTenancyByDomain::class,
+            InitializeTenancyIfTenantDomain::class,
         ],
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
