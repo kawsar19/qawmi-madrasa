@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Auth\TenantUserProvider;
 use App\Http\Middleware\InitializeTenancyIfTenantDomain;
+use App\Http\Middleware\SetPermissionsTeam;
 use App\Services\Academic\CurrentSession;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -61,9 +62,15 @@ class AppServiceProvider extends ServiceProvider
         // /livewire/update endpoint shared by the tenant panel and the
         // super-admin panel, so blocking central hosts would 404 every
         // super-admin interaction.
+        //
+        // SetPermissionsTeam is just as mandatory as tenancy itself: roles are
+        // stored per team, so without it every `can()` inside a Livewire
+        // action returns false and the user sees "This action is
+        // unauthorized" on their first click. It must run AFTER tenancy.
         $tenantMiddleware = [
             'web',
             InitializeTenancyIfTenantDomain::class,
+            SetPermissionsTeam::class,
         ];
 
         Livewire::setUpdateRoute(

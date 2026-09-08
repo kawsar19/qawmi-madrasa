@@ -27,8 +27,15 @@
             </x-panel.nav-group>
 
             <x-panel.nav-group label="একাডেমিক">
-                <x-panel.nav-link href="#">শিক্ষাবর্ষ</x-panel.nav-link>
-                <x-panel.nav-link href="#">মারহালা ও জামাত</x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.academic.sessions')" :active="request()->routeIs('tenant.academic.sessions')">
+                    শিক্ষাবর্ষ
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.academic.marhalas')" :active="request()->routeIs('tenant.academic.marhalas')">
+                    বিভাগ
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.academic.jamaats')" :active="request()->routeIs('tenant.academic.jamaats')">
+                    ক্লাস
+                </x-panel.nav-link>
                 <x-panel.nav-link href="#">কিতাব</x-panel.nav-link>
                 <x-panel.nav-link href="#">কারিকুলাম</x-panel.nav-link>
             </x-panel.nav-group>

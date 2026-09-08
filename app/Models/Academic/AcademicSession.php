@@ -9,6 +9,7 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * শিক্ষাবর্ষ।
@@ -16,6 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property int $tenant_id
  * @property string $name
+ * @property string|null $hijri_year
+ * @property string|null $gregorian_year
+ * @property Carbon|null $starts_on
+ * @property Carbon|null $ends_on
  * @property bool $is_current
  * @property bool $is_locked
  */

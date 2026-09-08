@@ -29,6 +29,20 @@ Route::prefix('panel')->name('tenant.')->group(function () {
 
     Route::middleware('tenant.panel')->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
+
+        Route::prefix('academic')->name('academic.')->group(function () {
+            Route::view('/sessions', 'tenant.academic.sessions')
+                ->middleware('can:academic.session.view')
+                ->name('sessions');
+
+            Route::view('/marhalas', 'tenant.academic.marhalas')
+                ->middleware('can:academic.marhala.view')
+                ->name('marhalas');
+
+            Route::view('/jamaats', 'tenant.academic.jamaats')
+                ->middleware('can:academic.jamaat.view')
+                ->name('jamaats');
+        });
     });
 });
 
