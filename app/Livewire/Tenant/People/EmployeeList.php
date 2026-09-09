@@ -6,12 +6,15 @@ namespace App\Livewire\Tenant\People;
 
 use App\Models\People\Employee;
 use App\Services\People\EmployeeRegistrar;
+use App\Support\Media;
 use App\Support\PermissionRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 /**
@@ -23,6 +26,7 @@ use Livewire\WithPagination;
 class EmployeeList extends Component
 {
     use AuthorizesRequests;
+    use WithFileUploads;
     use WithPagination;
 
     public string $search = '';
@@ -49,6 +53,13 @@ class EmployeeList extends Component
     public string $mobile = '';
 
     public string $email = '';
+
+    // ---- ছবি ----
+    // নতুন আপলোড; না দিলে পুরনো ছবি অক্ষত থাকে।
+    public ?TemporaryUploadedFile $photo = null;
+
+    // সম্পাদনার সময় বর্তমান ছবিটি দেখানোর জন্য।
+    public string $photoPath = '';
 
     // ---- চাকরি ----
     public string $type = Employee::TYPE_TEACHER;
@@ -184,6 +195,8 @@ class EmployeeList extends Component
             'nidNo' => ['nullable', 'string', 'max:50'],
             'mobile' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
+            // ছবি সবসময় ঐচ্ছিক — বাবুর্চি বা দারোয়ানের ছবি নাও থাকতে পারে।
+            'photo' => ['nullable', 'image', 'max:2048'],
 
             'type' => ['required', Rule::in(array_keys(self::types()))],
             'designation' => ['nullable', Rule::in(array_keys(self::designations()))],
@@ -233,6 +246,7 @@ class EmployeeList extends Component
             'nidNo' => 'জাতীয় পরিচয়পত্র নম্বর',
             'mobile' => 'মোবাইল',
             'email' => 'ইমেইল',
+            'photo' => 'ছবি',
             'type' => 'ধরন',
             'designation' => 'পদবি',
             'qualification' => 'শিক্ষাগত যোগ্যতা',
@@ -272,6 +286,8 @@ class EmployeeList extends Component
         $this->nidNo = (string) $employee->nid_no;
         $this->mobile = (string) $employee->mobile;
         $this->email = (string) $employee->email;
+        $this->photo = null;
+        $this->photoPath = (string) $employee->photo_path;
         $this->type = $employee->type;
         $this->designation = (string) $employee->designation;
         $this->qualification = (string) $employee->qualification;
@@ -327,6 +343,10 @@ class EmployeeList extends Component
             'notes' => $this->blankToNull($this->notes),
         ];
 
+        if ($this->photo !== null) {
+            $attributes['photo_path'] = Media::store($this->photo, 'people/employees');
+        }
+
         $account = $this->wantsAccount ? array_filter([
             'email' => $this->accountEmail,
             'password' => $this->accountPassword,
@@ -341,6 +361,12 @@ class EmployeeList extends Component
             session()->flash('status', "{$employee->name} — যুক্ত করা হয়েছে। আইডি: {$employee->employee_uid}");
         } else {
             $employee = Employee::findOrFail($this->editingId);
+
+            // ছবি বদলালে পুরনো ফাইল রেখে দিলে ডিস্ক ভরে যেত।
+            if ($this->photo !== null) {
+                Media::delete($employee->photo_path);
+            }
+
             $employee->update($attributes);
 
             if ($account !== null) {
@@ -391,6 +417,8 @@ class EmployeeList extends Component
         $this->nidNo = '';
         $this->mobile = '';
         $this->email = '';
+        $this->photo = null;
+        $this->photoPath = '';
         $this->type = Employee::TYPE_TEACHER;
         $this->designation = '';
         $this->qualification = '';

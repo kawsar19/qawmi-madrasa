@@ -45,6 +45,25 @@
                         <x-form.field label="ইমেইল" name="email">
                             <input type="email" id="email" wire:model="email" class="{{ $inputClass }}">
                         </x-form.field>
+
+                        <x-form.field label="ছবি" name="photo"
+                                      hint="সর্বোচ্চ ২ মেগাবাইট — JPG বা PNG">
+                            <input type="file" id="photo" wire:model="photo" accept="image/*"
+                                   class="mt-1 w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100">
+
+                            <div wire:loading wire:target="photo" class="mt-1 text-sm text-gray-500">
+                                আপলোড হচ্ছে…
+                            </div>
+
+                            {{-- নতুন ফাইল থাকলে সেটিই দেখাই, নইলে সংরক্ষিত ছবি। --}}
+                            @if ($photo)
+                                <img src="{{ $photo->temporaryUrl() }}" alt=""
+                                     class="mt-2 h-24 w-24 rounded-lg object-cover">
+                            @elseif ($photoPath)
+                                <img src="{{ \App\Support\Media::url($photoPath) }}" alt=""
+                                     class="mt-2 h-24 w-24 rounded-lg object-cover">
+                            @endif
+                        </x-form.field>
                     </div>
                 </div>
 
@@ -246,10 +265,23 @@
                         <tr wire:key="employee-{{ $employee->id }}">
                             <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ \App\Support\Bn::num($employee->employee_uid) }}</td>
                             <td class="px-4 py-3">
-                                <div class="font-medium text-gray-900">{{ $employee->name }}</div>
-                                @if ($employee->user)
-                                    <div class="text-xs text-gray-500">{{ $employee->user->email }}</div>
-                                @endif
+                                <div class="flex items-center gap-3">
+                                    @if ($employee->photo_path)
+                                        <img src="{{ \App\Support\Media::url($employee->photo_path) }}" alt=""
+                                             loading="lazy" class="h-9 w-9 shrink-0 rounded-full object-cover">
+                                    @else
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-500">
+                                            {{ mb_substr($employee->name, 0, 1) }}
+                                        </span>
+                                    @endif
+
+                                    <div>
+                                        <div class="font-medium text-gray-900">{{ $employee->name }}</div>
+                                        @if ($employee->user)
+                                            <div class="text-xs text-gray-500">{{ $employee->user->email }}</div>
+                                        @endif
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-gray-600">
                                 {{ $designationLabels[$employee->designation] ?? '—' }}

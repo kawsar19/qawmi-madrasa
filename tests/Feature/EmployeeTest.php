@@ -11,7 +11,9 @@ use App\Models\People\Employee;
 use App\Models\User;
 use App\Services\People\EmployeeRegistrar;
 use App\Services\Tenancy\TenantProvisioner;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 afterEach(fn () => tenancy()->end());
@@ -94,6 +96,83 @@ it('hires an employee with a uid', function () {
         ->and($employee->monthly_salary)->toBe('12000.50')
         ->and($employee->joined_on)->not->toBeNull()
         ->and($employee->user_id)->toBeNull();
+});
+
+it('stores an uploaded photo', function () {
+    Storage::fake('public');
+
+    $tenant = employeeTenant();
+    $user = employeeActor($tenant);
+
+    Livewire::actingAs($user)
+        ->test(EmployeeList::class)
+        ->set('name', 'মাওলানা আব্দুল করিম')
+        ->set('photo', UploadedFile::fake()->image('ustad.jpg'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee = Employee::firstOrFail();
+
+    expect($employee->photo_path)->not->toBeNull();
+    Storage::disk('public')->assertExists($employee->photo_path);
+});
+
+it('replaces the old photo file when a new one is uploaded', function () {
+    Storage::fake('public');
+
+    $tenant = employeeTenant();
+    $user = employeeActor($tenant);
+
+    Livewire::actingAs($user)
+        ->test(EmployeeList::class)
+        ->set('name', 'মাওলানা আব্দুল করিম')
+        ->set('photo', UploadedFile::fake()->image('old.jpg'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee = Employee::firstOrFail();
+    $old = $employee->photo_path;
+
+    Livewire::actingAs($user)
+        ->test(EmployeeList::class)
+        ->call('edit', $employee->id)
+        ->set('photo', UploadedFile::fake()->image('new.jpg'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee->refresh();
+
+    expect($employee->photo_path)->not->toBe($old);
+    // পুরনো ফাইল রেখে দিলে ডিস্ক ভরে যেত।
+    Storage::disk('public')->assertMissing($old);
+    Storage::disk('public')->assertExists($employee->photo_path);
+});
+
+it('keeps the existing photo when none is uploaded on edit', function () {
+    Storage::fake('public');
+
+    $tenant = employeeTenant();
+    $user = employeeActor($tenant);
+
+    Livewire::actingAs($user)
+        ->test(EmployeeList::class)
+        ->set('name', 'মাওলানা আব্দুল করিম')
+        ->set('photo', UploadedFile::fake()->image('ustad.jpg'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee = Employee::firstOrFail();
+    $path = $employee->photo_path;
+
+    Livewire::actingAs($user)
+        ->test(EmployeeList::class)
+        ->call('edit', $employee->id)
+        ->set('mobile', '01812345678')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($employee->refresh()->photo_path)->toBe($path);
+    Storage::disk('public')->assertExists($path);
 });
 
 it('gives each employee a distinct uid', function () {

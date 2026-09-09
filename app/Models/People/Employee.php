@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $father_name
  * @property string|null $mobile
  * @property string|null $email
+ * @property string|null $photo_path
  * @property string $type
  * @property string|null $designation
  * @property string|null $qualification
