@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\PrepareTenantStorage;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,11 @@ class TenancyServiceProvider extends ServiceProvider
             // DeleteDatabase jobs are deliberately NOT registered here.
             // Tenant provisioning (roles, seed data, admin user) is handled by
             // App\Services\Tenancy\TenantProvisioner instead.
-            Events\TenantCreated::class => [],
+            Events\TenantCreated::class => [
+                // নতুন মাদরাসার storage ফোল্ডার না থাকলে প্রথম
+                // livewire/update রিকোয়েস্টই ৫০০ দেয়।
+                PrepareTenantStorage::class,
+            ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
             Events\UpdatingTenant::class => [],

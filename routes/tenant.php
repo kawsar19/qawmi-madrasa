@@ -52,6 +52,14 @@ Route::prefix('panel')->name('tenant.')->group(function () {
             Route::view('/notices', 'tenant.cms.notices')
                 ->middleware('can:cms.notice.view')
                 ->name('notices');
+
+            Route::view('/slider', 'tenant.cms.slider')
+                ->middleware('can:cms.slider.view')
+                ->name('slider');
+
+            Route::view('/gallery', 'tenant.cms.gallery')
+                ->middleware('can:cms.gallery.view')
+                ->name('gallery');
         });
 
         Route::prefix('people')->name('people.')->group(function () {

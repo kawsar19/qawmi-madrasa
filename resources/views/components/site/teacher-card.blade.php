@@ -4,7 +4,7 @@
 <div class="rounded-lg border border-stone-200 bg-white p-5 text-center">
     <div class="mx-auto grid size-20 place-items-center overflow-hidden rounded-full border-2 border-[var(--site-accent)]/30 bg-stone-100">
         @if ($teacher->photo_path)
-            <img src="{{ asset('storage/'.$teacher->photo_path) }}" alt="" class="size-full object-cover">
+            <img src="{{ media($teacher->photo_path) }}" alt="" class="size-full object-cover">
         @else
             <span class="text-2xl font-semibold text-[var(--site-brand)]">
                 {{ mb_substr($teacher->name, 0, 1) }}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Tenant\Cms;
 
 use App\Models\Cms\Notice;
+use App\Support\Media;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -137,7 +138,7 @@ class NoticeList extends Component
 
         // ফাইল দিলে তবেই পথ বদলাবে; নইলে পুরনো সংযুক্তি থেকে যাবে।
         if ($this->attachment !== null) {
-            $attributes['attachment_path'] = $this->attachment->store('notices', 'public');
+            $attributes['attachment_path'] = Media::store($this->attachment, 'notices');
         }
 
         if ($this->editingId === null) {

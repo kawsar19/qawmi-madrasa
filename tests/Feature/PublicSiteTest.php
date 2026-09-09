@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Models\Central\Tenant;
 use App\Models\Cms\Notice;
+use App\Models\Cms\SiteImage;
 use App\Models\Cms\SiteSetting;
 use App\Services\People\EmployeeRegistrar;
 use App\Services\Tenancy\TenantProvisioner;
+use App\Support\Media;
 use App\Support\SiteTemplate;
 
 afterEach(fn () => tenancy()->end());
@@ -314,4 +316,105 @@ it('renders modern markup, not classic, when selected', function () {
         ->assertOk()
         ->assertSee('url(#dots)', false)
         ->assertDontSee('url(#girih)', false);
+});
+
+it('falls back to the static hero when no slides exist', function () {
+    siteTenant();
+
+    // স্লাইড না দিলে সাইট খালি জায়গা নয়, আগের ব্যানারই দেখাবে।
+    $this->get('http://darul-ulum.localhost/')
+        ->assertOk()
+        ->assertDontSee('aria-roledescription="carousel"', false);
+});
+
+it('shows the slider instead of the hero once slides are added', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+    SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'site/slider/first.jpg',
+        'title' => 'বার্ষিক মাহফিল',
+        'sort_order' => 1,
+    ]);
+    tenancy()->end();
+
+    $this->get('http://darul-ulum.localhost/')
+        ->assertOk()
+        ->assertSee('aria-roledescription="carousel"', false)
+        ->assertSee('বার্ষিক মাহফিল');
+});
+
+it('hides inactive slides from the public site', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+    SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'site/slider/hidden.jpg',
+        'title' => 'লুকানো স্লাইড',
+        'is_active' => false,
+    ]);
+    tenancy()->end();
+
+    $this->get('http://darul-ulum.localhost/')
+        ->assertOk()
+        ->assertDontSee('লুকানো স্লাইড');
+});
+
+it('keeps one madrasa slides out of another', function () {
+    $first = siteTenant('prothom');
+    siteTenant('ditiyo');
+
+    tenancy()->initialize($first);
+    SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'site/slider/first.jpg',
+        'title' => 'প্রথম মাদরাসার স্লাইড',
+    ]);
+    tenancy()->end();
+
+    // গ্লোবাল স্কোপ ছাড়া এই স্লাইড অন্য মাদরাসার হোমপেজেও দেখা যেত।
+    $this->get('http://ditiyo.localhost/')
+        ->assertOk()
+        ->assertDontSee('প্রথম মাদরাসার স্লাইড');
+});
+
+it('builds a tenant-scoped url for uploaded images', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+
+    // asset('storage/…') tenancy-র suffixed ফোল্ডার চেনে না, তাই ছবি ৪০৪
+    // দিত; URL-এ tenant id থাকা চাই।
+    expect(Media::url('site/slider/a.jpg'))
+        ->toContain("storage/tenants/{$tenant->getTenantKey()}/site/slider/a.jpg");
+});
+
+it('returns null for a missing image path', function () {
+    expect(Media::url(null))->toBeNull()
+        ->and(Media::url(''))->toBeNull();
+});
+
+it('shows the gallery page and hides it when the section is off', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+    SiteImage::create([
+        'collection' => SiteImage::COLLECTION_GALLERY,
+        'image_path' => 'site/gallery/one.jpg',
+        'title' => 'বার্ষিক অনুষ্ঠান',
+    ]);
+    tenancy()->end();
+
+    $this->get('http://darul-ulum.localhost/gallery')
+        ->assertOk()
+        ->assertSee('বার্ষিক অনুষ্ঠান');
+
+    tenancy()->initialize($tenant);
+    SiteSetting::current()->update(['show_gallery' => false]);
+    tenancy()->end();
+
+    // সেকশন বন্ধ থাকলে পেজটিও থাকা উচিত নয়।
+    $this->get('http://darul-ulum.localhost/gallery')->assertNotFound();
 });

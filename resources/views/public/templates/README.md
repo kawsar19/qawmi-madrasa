@@ -25,6 +25,7 @@ cp -r classic heritage
 │   ├── notices.blade.php
 │   ├── notice.blade.php
 │   ├── teachers.blade.php
+│   ├── gallery.blade.php
 │   └── contact.blade.php
 └── partials/               ঐ টেমপ্লেটের নিজস্ব টুকরো
 ```
@@ -37,12 +38,47 @@ cp -r classic heritage
 
 | পেজ | অতিরিক্ত |
 |---|---|
-| home | `$stats`, `$notices`, `$teachers`, `$departments` |
+| home | `$stats`, `$slides`, `$notices`, `$teachers`, `$departments`, `$gallery` |
 | about | `$departments` |
 | notices | `$notices` (paginated), `$categories`, `$activeCategory` |
 | notice | `$notice`, `$related` |
 | teachers | `$teachers` |
+| gallery | `$gallery` |
 | contact | — |
+
+## স্লাইডার ও গ্যালারি
+
+`$slides` ও `$gallery` — দুটোই `SiteImage` মডেলের সংগ্রহ। প্রতিটিতে
+`->url()` (ছবির ঠিকানা), `title`, `subtitle`, `link_label`, `link_url`,
+`->hasLink()`।
+
+হোমপেজে নিয়ম একটাই: **স্লাইড থাকলে স্লাইডার, না থাকলে স্থির হিরো** —
+যে মাদরাসা এখনো ছবি দেয়নি তার সাইট যেন ফাঁকা না দেখায়।
+
+```blade
+@if ($slides->isNotEmpty())
+    @include('public.templates.<নাম>.partials.slider')
+@else
+    @include('public.templates.<নাম>.partials.hero')
+@endif
+```
+
+স্লাইডারে **JavaScript নেই** — CSS `snap-x snap-mandatory` আর নিচের
+`#slide-{id}` anchor লিংক। মোবাইলে আঙুলে swipe, ডেস্কটপে নম্বরে ক্লিক।
+নতুন টেমপ্লেটে classic বা modern-এর `partials/slider.blade.php` কপি করে
+শুধু ক্লাস বদলালেই চলে।
+
+## ছবি
+
+আপলোড করা ছবির ঠিকানা সবসময় **`media($path)`** দিয়ে — `asset('storage/…')`
+নয়। tenancy প্রতি মাদরাসার ফাইল আলাদা ফোল্ডারে রাখে, তাই `asset()` ভুল
+জায়গায় খোঁজে আর ছবি ৪০৪ দেয়। `media()` লোকাল ডিস্ক ও R2 — দুটোতেই ঠিক
+URL বানায়।
+
+```blade
+<img src="{{ media($settings->logo_path) }}" alt="">
+<img src="{{ $slide->url() }}" alt="">   {{-- SiteImage-এর নিজস্ব --}}
+```
 
 ## রঙ
 

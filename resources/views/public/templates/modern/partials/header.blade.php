@@ -7,7 +7,7 @@
                 <span class="grid size-11 shrink-0 place-items-center rounded-xl text-base font-bold text-white shadow-sm"
                       style="background: var(--site-brand)">
                     @if ($settings->logo_path)
-                        <img src="{{ asset('storage/'.$settings->logo_path) }}" alt=""
+                        <img src="{{ media($settings->logo_path) }}" alt=""
                              class="size-11 rounded-xl object-cover">
                     @else
                         {{ mb_substr($settings->displayTitle(), 0, 1) }}

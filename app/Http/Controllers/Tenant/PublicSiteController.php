@@ -8,6 +8,7 @@ use App\Livewire\Tenant\People\EmployeeList;
 use App\Models\Academic\Kitab;
 use App\Models\Academic\Marhala;
 use App\Models\Cms\Notice;
+use App\Models\Cms\SiteImage;
 use App\Models\Cms\SiteSetting;
 use App\Models\People\Employee;
 use App\Models\People\Student;
@@ -35,6 +36,8 @@ class PublicSiteController
 
         return $this->render($settings, 'home', [
             'stats' => $this->stats(),
+            // স্লাইড না থাকলে টেমপ্লেট স্থির হিরো দেখাবে।
+            'slides' => $this->images(SiteImage::COLLECTION_SLIDER),
             // হোমপেজে সংক্ষিপ্ত — বিস্তারিত আলাদা পেজে।
             'notices' => $settings->show_notices
                 ? Notice::query()->visible()->ranked()->limit(3)->get()
@@ -43,6 +46,9 @@ class PublicSiteController
                 ? $this->teacherQuery()->limit(4)->get()
                 : collect(),
             'departments' => $this->departments(),
+            'gallery' => $settings->show_gallery
+                ? $this->images(SiteImage::COLLECTION_GALLERY, 8)
+                : collect(),
         ]);
     }
 
@@ -105,6 +111,17 @@ class PublicSiteController
 
         return $this->render($settings, 'teachers', [
             'teachers' => $this->teacherQuery()->get(),
+        ]);
+    }
+
+    public function gallery(): View
+    {
+        $settings = $this->settings();
+
+        $this->assertSectionVisible($settings->show_gallery);
+
+        return $this->render($settings, 'gallery', [
+            'gallery' => $this->images(SiteImage::COLLECTION_GALLERY),
         ]);
     }
 
@@ -175,6 +192,20 @@ class PublicSiteController
     private function teacherQuery()
     {
         return Employee::query()->active()->teachers()->orderBy('name');
+    }
+
+    /**
+     * সাইটের ছবি — স্লাইডার বা গ্যালারি।
+     *
+     * @return Collection<int, SiteImage>
+     */
+    private function images(string $collection, ?int $limit = null)
+    {
+        return SiteImage::query()
+            ->collection($collection)
+            ->visible()
+            ->when($limit !== null, fn ($query) => $query->limit($limit))
+            ->get();
     }
 
     /**

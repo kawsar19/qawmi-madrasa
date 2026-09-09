@@ -60,7 +60,39 @@ return [
             'report' => false,
         ],
 
+        /**
+         * Cloudflare R2 — S3-compatible, no egress fee. Set MEDIA_DISK=r2
+         * once the bucket exists; App\Support\Media then builds every URL
+         * from R2_URL and no Blade template changes.
+         */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            // Public bucket URL or custom CDN domain — this is what users hit.
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media Disk
+    |--------------------------------------------------------------------------
+    |
+    | আপলোড করা ছবি ও ফাইল যে ডিস্কে যাবে। লোকালে 'public', প্রোডাকশনে
+    | 'r2'। App\Support\Media এই একটি মান দেখেই URL বানায়, তাই ডিস্ক
+    | বদলাতে .env-এর MEDIA_DISK ছাড়া কিছু ছুঁতে হয় না।
+    |
+    */
+
+    'media_disk' => env('MEDIA_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------

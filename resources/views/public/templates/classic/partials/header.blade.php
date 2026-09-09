@@ -7,7 +7,7 @@
             <a href="{{ route('public.home') }}" class="flex min-w-0 items-center gap-3">
                 <span class="grid size-12 shrink-0 place-items-center rounded-full border-2 border-[var(--site-accent)]/60 bg-white/10">
                     @if ($settings->logo_path)
-                        <img src="{{ asset('storage/'.$settings->logo_path) }}" alt=""
+                        <img src="{{ media($settings->logo_path) }}" alt=""
                              class="size-10 rounded-full object-cover">
                     @else
                         <span class="text-lg font-bold text-[var(--site-accent)]">

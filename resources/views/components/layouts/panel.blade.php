@@ -81,6 +81,12 @@
                 <x-panel.nav-link :href="route('tenant.cms.notices')" :active="request()->routeIs('tenant.cms.notices')" icon="megaphone">
                     নোটিশ
                 </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.cms.slider')" :active="request()->routeIs('tenant.cms.slider')" icon="slides">
+                    স্লাইডার
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.cms.gallery')" :active="request()->routeIs('tenant.cms.gallery')" icon="image">
+                    গ্যালারি
+                </x-panel.nav-link>
             </x-panel.nav-group>
 
             <x-panel.nav-group label="আর্থিক">

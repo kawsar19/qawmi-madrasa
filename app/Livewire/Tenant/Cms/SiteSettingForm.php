@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Tenant\Cms;
 
 use App\Models\Cms\SiteSetting;
+use App\Support\Media;
 use App\Support\SiteTemplate;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -209,11 +210,11 @@ class SiteSettingForm extends Component
 
         // ছবি আপলোড হলেই কেবল পথ বদলাবে; নইলে পুরনোটাই থাকবে।
         if ($this->logo !== null) {
-            $attributes['logo_path'] = $this->logo->store('site', 'public');
+            $attributes['logo_path'] = Media::store($this->logo, 'site');
         }
 
         if ($this->heroImage !== null) {
-            $attributes['hero_image_path'] = $this->heroImage->store('site', 'public');
+            $attributes['hero_image_path'] = Media::store($this->heroImage, 'site');
         }
 
         $settings->update($attributes);

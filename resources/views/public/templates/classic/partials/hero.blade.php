@@ -2,7 +2,7 @@
 <section class="relative overflow-hidden bg-[var(--site-brand)] text-white">
     {{-- ব্যানার ছবি থাকলে পেছনে, না থাকলে শুধু নকশা। --}}
     @if ($settings->hero_image_path)
-        <img src="{{ asset('storage/'.$settings->hero_image_path) }}" alt=""
+        <img src="{{ media($settings->hero_image_path) }}" alt=""
              class="absolute inset-0 size-full object-cover opacity-25">
     @endif
 

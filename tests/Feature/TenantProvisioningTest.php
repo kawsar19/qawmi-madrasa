@@ -99,3 +99,19 @@ it('keeps reference data separate per tenant', function () {
     expect(Marhala::where('code', 'takmil')->first()->name)
         ->toBe('তাকমিল (দাওরায়ে হাদীস)');
 });
+
+it('creates the tenant storage tree so the first request does not 500', function () {
+    $tenant = app(TenantProvisioner::class)->provision(
+        ['name' => 'নতুন মাদরাসা', 'slug' => 'notun', 'madrasa_type' => 'kitab'],
+        'notun.localhost',
+        ['name' => 'মুহতামিম', 'email' => 'admin@notun.test', 'password' => 'password'],
+    );
+
+    // framework/cache না থাকলে প্রথম real-time facade লেখাই tempnam()
+    // ওয়ার্নিং তুলে livewire/update-এ ৫০০ দেয়।
+    $root = storage_path('tenant'.$tenant->getTenantKey());
+
+    expect($root.'/app/public')->toBeDirectory()
+        ->and($root.'/framework/cache')->toBeDirectory()
+        ->and($root.'/framework/views')->toBeDirectory();
+});

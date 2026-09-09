@@ -28,5 +28,6 @@ Route::middleware('tenant.public')
             ->whereNumber('id')
             ->name('notice');
         Route::get('/shikkhok', [PublicSiteController::class, 'teachers'])->name('teachers');
+        Route::get('/gallery', [PublicSiteController::class, 'gallery'])->name('gallery');
         Route::get('/jogajog', [PublicSiteController::class, 'contact'])->name('contact');
     });

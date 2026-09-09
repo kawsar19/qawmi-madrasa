@@ -50,7 +50,7 @@
             @endif
 
             @if ($notice->attachment_path)
-                <a href="{{ asset('storage/'.$notice->attachment_path) }}" target="_blank" rel="noopener"
+                <a href="{{ media($notice->attachment_path) }}" target="_blank" rel="noopener"
                    class="mt-8 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90"
                    style="background: var(--site-brand)">
                     <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.8"

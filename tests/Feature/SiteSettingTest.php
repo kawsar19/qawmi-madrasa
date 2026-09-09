@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\Livewire\Tenant\Cms\NoticeList;
+use App\Livewire\Tenant\Cms\SiteImageList;
 use App\Livewire\Tenant\Cms\SiteSettingForm;
 use App\Models\Central\Tenant;
 use App\Models\Cms\Notice;
+use App\Models\Cms\SiteImage;
 use App\Models\Cms\SiteSetting;
 use App\Models\User;
 use App\Services\Tenancy\TenantProvisioner;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -303,4 +306,117 @@ it('never shows another madrasa\'s settings', function () {
         ->get('http://madrasa-b.localhost/panel/website/settings')
         ->assertOk()
         ->assertDontSee('ক-মাদরাসার সাইট');
+});
+
+it('uploads a slide and lists it', function () {
+    $tenant = cmsTenant();
+    Storage::fake('public');
+
+    Livewire::actingAs(cmsActor($tenant))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_SLIDER])
+        ->set('image', UploadedFile::fake()->image('slide.jpg'))
+        ->set('title', 'বার্ষিক মাহফিল')
+        ->set('linkLabel', 'বিস্তারিত')
+        ->set('linkUrl', 'https://example.com')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $slide = SiteImage::query()->collection(SiteImage::COLLECTION_SLIDER)->firstOrFail();
+
+    expect($slide->title)->toBe('বার্ষিক মাহফিল')
+        ->and($slide->hasLink())->toBeTrue()
+        ->and($slide->is_active)->toBeTrue();
+});
+
+it('requires a link url when a button label is given', function () {
+    $tenant = cmsTenant();
+
+    // লেখা থাকলে বোতাম দেখাত, কিন্তু ক্লিকে কোথাও যেত না।
+    Livewire::actingAs(cmsActor($tenant))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_SLIDER])
+        ->set('image', UploadedFile::fake()->image('slide.jpg'))
+        ->set('linkLabel', 'বিস্তারিত')
+        ->call('save')
+        ->assertHasErrors(['linkUrl']);
+});
+
+it('requires an image for a new slide but not when editing', function () {
+    $tenant = cmsTenant();
+    Storage::fake('public');
+
+    $component = Livewire::actingAs(cmsActor($tenant))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_SLIDER])
+        ->set('title', 'ছবি ছাড়া')
+        ->call('save')
+        ->assertHasErrors(['image']);
+
+    $slide = SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'site/slider/a.jpg',
+        'title' => 'পুরনো',
+    ]);
+
+    // সম্পাদনায় ছবি না বদলালেও সংরক্ষণ করা যায়।
+    $component->call('edit', $slide->id)
+        ->set('title', 'নতুন নাম')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($slide->fresh()->title)->toBe('নতুন নাম')
+        ->and($slide->fresh()->image_path)->toBe('site/slider/a.jpg');
+});
+
+it('reorders slides one step at a time', function () {
+    $tenant = cmsTenant();
+    cmsActor($tenant);
+
+    $first = SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'a.jpg', 'sort_order' => 1,
+    ]);
+    $second = SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'b.jpg', 'sort_order' => 2,
+    ]);
+
+    Livewire::actingAs(cmsAdmin($tenant))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_SLIDER])
+        ->call('move', $second->id, 'up');
+
+    expect($first->fresh()->sort_order)->toBe(2)
+        ->and($second->fresh()->sort_order)->toBe(1);
+});
+
+it('does not let a gallery component touch a slider row', function () {
+    $tenant = cmsTenant();
+    cmsActor($tenant);
+
+    $slide = SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'a.jpg',
+    ]);
+
+    // collection ছাড়া find() করলে গ্যালারির স্ক্রিন থেকে স্লাইড মোছা যেত।
+    expect(fn () => Livewire::actingAs(cmsAdmin($tenant))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_GALLERY])
+        ->call('delete', $slide->id))
+        ->toThrow(ModelNotFoundException::class);
+
+    expect($slide->fresh())->not->toBeNull();
+});
+
+it('keeps one madrasa site images out of another', function () {
+    $first = cmsTenant('prothom');
+    $second = cmsTenant('ditiyo');
+
+    cmsActor($first);
+    SiteImage::create([
+        'collection' => SiteImage::COLLECTION_SLIDER,
+        'image_path' => 'a.jpg', 'title' => 'প্রথম',
+    ]);
+    tenancy()->end();
+
+    Livewire::actingAs(cmsActor($second))
+        ->test(SiteImageList::class, ['collection' => SiteImage::COLLECTION_SLIDER])
+        ->assertDontSee('প্রথম');
 });

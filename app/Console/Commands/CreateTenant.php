@@ -67,6 +67,9 @@ class CreateTenant extends Command
             return self::FAILURE;
         }
 
+        // symlink ছাড়া নতুন মাদরাসার আপলোড করা ছবি সার্ভ হওয়ার পথ থাকে না।
+        $this->callSilently('storage:link-tenants');
+
         $this->info("✓ মাদরাসা তৈরি হয়েছে — {$tenant->name} (id: {$tenant->id})");
         $this->line("  ডোমেইন : http://{$domain}");
         $this->line("  প্যানেল  : http://{$domain}/panel");

@@ -135,7 +135,7 @@
                                  class="mt-3 size-20 rounded-lg border border-gray-200 object-cover">
                         @elseif ($settings->logo_path)
                             <div class="mt-3 flex items-center gap-3">
-                                <img src="{{ asset('storage/'.$settings->logo_path) }}" alt=""
+                                <img src="{{ media($settings->logo_path) }}" alt=""
                                      class="size-20 rounded-lg border border-gray-200 object-cover">
                                 <button type="button" wire:click="removeLogo"
                                         class="text-sm text-red-600 hover:underline">সরান</button>
@@ -156,7 +156,7 @@
                                  class="mt-3 h-20 w-full rounded-lg border border-gray-200 object-cover">
                         @elseif ($settings->hero_image_path)
                             <div class="mt-3 flex items-center gap-3">
-                                <img src="{{ asset('storage/'.$settings->hero_image_path) }}" alt=""
+                                <img src="{{ media($settings->hero_image_path) }}" alt=""
                                      class="h-20 w-32 rounded-lg border border-gray-200 object-cover">
                                 <button type="button" wire:click="removeHeroImage"
                                         class="text-sm text-red-600 hover:underline">সরান</button>

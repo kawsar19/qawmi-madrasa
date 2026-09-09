@@ -49,7 +49,7 @@
             {{-- ডান পাশ: ছবি থাকলে ছবি, নইলে বিসমিল্লাহ কার্ড --}}
             <div class="relative">
                 @if ($settings->hero_image_path)
-                    <img src="{{ asset('storage/'.$settings->hero_image_path) }}" alt=""
+                    <img src="{{ media($settings->hero_image_path) }}" alt=""
                          class="aspect-[4/3] w-full rounded-2xl object-cover shadow-lg">
                 @else
                     <div class="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-200 shadow-sm"

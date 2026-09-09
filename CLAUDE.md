@@ -43,6 +43,7 @@ php artisan db:restore             # bring one back (interactive picker)
 php artisan migrate:fresh --seed   # DESTRUCTIVE rebuild — ask the user first
 php artisan dev:info               # login URLs and demo accounts
 php artisan tenant:create          # provision a madrasa (interactive)
+php artisan storage:link-tenants   # per-tenant public/storage symlinks
 php artisan permissions:sync       # reconcile PermissionRegistry -> DB
 php artisan pdf:spike              # regenerate the Bengali PDF proof
 
@@ -100,6 +101,27 @@ These each cost real debugging time. Do not undo them.
   `InitializeTenancyByDomain` (in `AppServiceProvider` and `config/livewire.php`).
   Without this every `wire:click` runs with tenancy uninitialized, the global
   scope becomes a no-op, and components read across madrasas.
+
+### Uploaded files
+
+- **Never `asset('storage/'.$path)`.** `FilesystemTenancyBootstrapper`
+  suffixes `storage_path()`, so uploads land in `storage/tenant{id}/app/public`
+  while `public/storage` points at `storage/app/public` — the two never meet
+  and every image 404s. Use `media($path)` (`App\Support\Media`), which also
+  keeps R2/Cloudinary one `.env` change away.
+- Store through `Media::store($file, $folder)`, not `$file->store(...)`: on a
+  remote disk nothing separates tenants, so the tenant id has to go into the
+  key itself.
+- After creating a tenant, run `php artisan storage:link-tenants` or its
+  uploads have nowhere to be served from.
+- **A tenant needs its whole storage tree, not just `app/public`.** Because
+  `storage_path()` is suffixed, Laravel looks for `framework/cache`,
+  `framework/views`, `framework/sessions` and `app/livewire-tmp` under
+  `storage/tenant{id}/`. If `framework/cache` is missing, the first real-time
+  facade write calls `tempnam()` on a directory that isn't there — PHP falls
+  back to the system temp dir and raises a warning that becomes a 500 on
+  `livewire/update`. `Media::prepareTenantStorage()` creates all of them, and
+  the `TenantCreated` listener calls it.
 
 ### Bengali PDF (mPDF)
 

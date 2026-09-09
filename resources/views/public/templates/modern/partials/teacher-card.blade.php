@@ -3,7 +3,7 @@
 <div class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 transition-shadow duration-150 hover:shadow-md">
     <div class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-stone-100">
         @if ($teacher->photo_path)
-            <img src="{{ asset('storage/'.$teacher->photo_path) }}" alt="" class="size-full object-cover">
+            <img src="{{ media($teacher->photo_path) }}" alt="" class="size-full object-cover">
         @else
             <span class="text-xl font-semibold" style="color: var(--site-brand)">
                 {{ mb_substr($teacher->name, 0, 1) }}

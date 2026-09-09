@@ -24,7 +24,7 @@ final class SiteTemplate
      * A template missing one of these still works: the resolver falls back to
      * the classic version of that single page rather than 404-ing.
      */
-    public const PAGES = ['home', 'about', 'notices', 'notice', 'teachers', 'contact'];
+    public const PAGES = ['home', 'about', 'notices', 'notice', 'teachers', 'gallery', 'contact'];
 
     public const FALLBACK = SiteSetting::TEMPLATE_CLASSIC;
 
@@ -76,6 +76,10 @@ final class SiteTemplate
 
         if ($settings->show_teachers) {
             $menu[] = ['label' => 'শিক্ষকমণ্ডলী', 'route' => 'public.teachers'];
+        }
+
+        if ($settings->show_gallery) {
+            $menu[] = ['label' => 'গ্যালারি', 'route' => 'public.gallery'];
         }
 
         $menu[] = ['label' => 'যোগাযোগ', 'route' => 'public.contact'];
