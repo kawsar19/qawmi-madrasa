@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Tenant\AdmissionFormPdfController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\LogoutController;
+use App\Http\Controllers\Tenant\ReceiptPdfController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,6 +80,24 @@ Route::prefix('panel')->name('tenant.')->group(function () {
             Route::get('/admissions/{admission}/form.pdf', AdmissionFormPdfController::class)
                 ->middleware('can:people.admission.print')
                 ->name('admissions.form');
+        });
+
+        Route::prefix('finance')->name('finance.')->group(function () {
+            Route::view('/fee-structures', 'tenant.finance.fee-structures')
+                ->middleware('can:finance.fee_structure.view')
+                ->name('fee-structures');
+
+            Route::view('/invoices', 'tenant.finance.invoices')
+                ->middleware('can:finance.invoice.view')
+                ->name('invoices');
+
+            Route::view('/collect', 'tenant.finance.collect')
+                ->middleware('can:finance.payment.view')
+                ->name('collect');
+
+            Route::get('/payments/{payment}/receipt.pdf', ReceiptPdfController::class)
+                ->middleware('can:finance.payment.receipt')
+                ->name('receipt');
         });
     });
 });

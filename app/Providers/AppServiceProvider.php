@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Auth\TenantUserProvider;
 use App\Http\Middleware\InitializeTenancyIfTenantDomain;
+use App\Http\Middleware\SetCurrentAcademicSession;
 use App\Http\Middleware\SetPermissionsTeam;
 use App\Services\Academic\CurrentSession;
 use App\Support\SiteTemplate;
@@ -118,10 +119,17 @@ class AppServiceProvider extends ServiceProvider
         // stored per team, so without it every `can()` inside a Livewire
         // action returns false and the user sees "This action is
         // unauthorized" on their first click. It must run AFTER tenancy.
+        //
+        // SetCurrentAcademicSession likewise: the page load resolves the
+        // current bôrsho through the tenant.panel group, but livewire/update
+        // is its own route and never entered that group. Without it every
+        // wire:click runs with no current session, and any component that
+        // needs one (fee structure, bill run, আদায়) refuses to save.
         $tenantMiddleware = [
             'web',
             InitializeTenancyIfTenantDomain::class,
             SetPermissionsTeam::class,
+            SetCurrentAcademicSession::class,
         ];
 
         Livewire::setUpdateRoute(

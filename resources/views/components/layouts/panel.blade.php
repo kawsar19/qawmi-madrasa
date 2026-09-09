@@ -90,8 +90,15 @@
             </x-panel.nav-group>
 
             <x-panel.nav-group label="আর্থিক">
-                <x-panel.nav-link href="#" icon="receipt">ফি ও বিল</x-panel.nav-link>
-                <x-panel.nav-link href="#" icon="cash">আদায়</x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.finance.fee-structures')" :active="request()->routeIs('tenant.finance.fee-structures')" icon="receipt">
+                    ফি স্ট্রাকচার
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.finance.invoices')" :active="request()->routeIs('tenant.finance.invoices')" icon="receipt">
+                    বিল
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.finance.collect')" :active="request()->routeIs('tenant.finance.collect')" icon="cash">
+                    আদায়
+                </x-panel.nav-link>
                 <x-panel.nav-link href="#" icon="heart">দান ও যাকাত</x-panel.nav-link>
                 <x-panel.nav-link href="#" icon="ledger">হিসাব</x-panel.nav-link>
             </x-panel.nav-group>
