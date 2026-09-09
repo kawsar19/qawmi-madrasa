@@ -44,6 +44,16 @@ Route::prefix('panel')->name('tenant.')->group(function () {
                 ->name('jamaats');
         });
 
+        Route::prefix('website')->name('cms.')->group(function () {
+            Route::view('/settings', 'tenant.cms.site-settings')
+                ->middleware('can:cms.site_setting.view')
+                ->name('settings');
+
+            Route::view('/notices', 'tenant.cms.notices')
+                ->middleware('can:cms.notice.view')
+                ->name('notices');
+        });
+
         Route::prefix('people')->name('people.')->group(function () {
             Route::view('/students', 'tenant.people.students')
                 ->middleware('can:people.student.view')

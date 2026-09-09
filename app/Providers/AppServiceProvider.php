@@ -8,6 +8,7 @@ use App\Auth\TenantUserProvider;
 use App\Http\Middleware\InitializeTenancyIfTenantDomain;
 use App\Http\Middleware\SetPermissionsTeam;
 use App\Services\Academic\CurrentSession;
+use App\Support\SiteTemplate;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +33,23 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configureLivewireTenancy();
         $this->registerBladeDirectives();
+        $this->registerSiteTemplates();
         $this->guardDestructiveMigrations();
+    }
+
+    /**
+     * পাবলিক সাইটের টেমপ্লেট ফোল্ডারগুলোকে anonymous component namespace
+     * হিসেবে রেজিস্টার করে।
+     *
+     * This is what lets a page write
+     * <x-dynamic-component :component="$template.'::layout'">, so a new
+     * template is a folder of Blade files with no PHP to change.
+     */
+    private function registerSiteTemplates(): void
+    {
+        foreach (SiteTemplate::installed() as $template) {
+            Blade::anonymousComponentNamespace("public.templates.{$template}", $template);
+        }
     }
 
     /**

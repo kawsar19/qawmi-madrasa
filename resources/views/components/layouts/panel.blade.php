@@ -7,6 +7,10 @@
     {{-- প্রতিটি পেজ শুধু heading পাঠায়; ট্যাবের নামও সেটাই হওয়া উচিত। --}}
     <title>{{ $title ?? $heading ?? 'ড্যাশবোর্ড' }} — {{ tenant('name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- wire:loading এলিমেন্ট ডিফল্টে লুকানোর CSS এখান থেকে আসে; ছাড়া
+         "লোড হচ্ছে…" লেখাগুলো সবসময় দেখা যায়। --}}
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
 <div x-data="{ sidebarOpen: false }">
@@ -68,6 +72,15 @@
             <x-panel.nav-group label="পরীক্ষা">
                 <x-panel.nav-link href="#" icon="pencil">পরীক্ষা ও নম্বর</x-panel.nav-link>
                 <x-panel.nav-link href="#" icon="chart">ফলাফল</x-panel.nav-link>
+            </x-panel.nav-group>
+
+            <x-panel.nav-group label="ওয়েবসাইট">
+                <x-panel.nav-link :href="route('tenant.cms.settings')" :active="request()->routeIs('tenant.cms.settings')" icon="globe">
+                    সেটিংস
+                </x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.cms.notices')" :active="request()->routeIs('tenant.cms.notices')" icon="megaphone">
+                    নোটিশ
+                </x-panel.nav-link>
             </x-panel.nav-group>
 
             <x-panel.nav-group label="আর্থিক">

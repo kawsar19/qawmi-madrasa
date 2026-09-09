@@ -1,0 +1,105 @@
+{{-- যোগাযোগের তথ্য ও ভর্তির আহ্বান — যোগাযোগ পেজ ও হোমপেজ দুই জায়গায়। --}}
+<div class="grid gap-6 lg:grid-cols-2">
+            {{-- যোগাযোগের তথ্য --}}
+            <div class="rounded-lg border border-stone-200 bg-stone-50 p-6">
+                <h3 class="font-semibold text-stone-900">যোগাযোগ</h3>
+
+                <dl class="mt-5 space-y-4 text-sm">
+                    @if ($settings->address)
+                        <div class="flex gap-3">
+                            <svg class="mt-0.5 size-5 shrink-0 text-[var(--site-brand)]" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <div>
+                                <dt class="text-stone-500">ঠিকানা</dt>
+                                <dd class="mt-0.5 text-pretty text-stone-800">{{ $settings->address }}</dd>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($settings->phone)
+                        <div class="flex gap-3">
+                            <svg class="mt-0.5 size-5 shrink-0 text-[var(--site-brand)]" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/>
+                            </svg>
+                            <div>
+                                <dt class="text-stone-500">ফোন</dt>
+                                <dd class="mt-0.5 tabular-nums text-stone-800">
+                                    <a href="tel:{{ $settings->phone }}" class="hover:underline">@bn($settings->phone)</a>
+                                    @if ($settings->phone_alt)
+                                        <span class="text-stone-400">·</span>
+                                        <a href="tel:{{ $settings->phone_alt }}" class="hover:underline">@bn($settings->phone_alt)</a>
+                                    @endif
+                                </dd>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($settings->email)
+                        <div class="flex gap-3">
+                            <svg class="mt-0.5 size-5 shrink-0 text-[var(--site-brand)]" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm0 2 8 6 8-6"/>
+                            </svg>
+                            <div>
+                                <dt class="text-stone-500">ইমেইল</dt>
+                                <dd class="mt-0.5 text-stone-800">
+                                    <a href="mailto:{{ $settings->email }}" class="hover:underline">{{ $settings->email }}</a>
+                                </dd>
+                            </div>
+                        </div>
+                    @endif
+                </dl>
+
+                @if ($settings->facebook_url || $settings->youtube_url)
+                    <div class="mt-6 flex gap-2 border-t border-stone-200 pt-5">
+                        @if ($settings->facebook_url)
+                            <a href="{{ $settings->facebook_url }}" target="_blank" rel="noopener"
+                               class="rounded border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition-colors hover:bg-white">
+                                ফেসবুক
+                            </a>
+                        @endif
+                        @if ($settings->youtube_url)
+                            <a href="{{ $settings->youtube_url }}" target="_blank" rel="noopener"
+                               class="rounded border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition-colors hover:bg-white">
+                                ইউটিউব
+                            </a>
+                        @endif
+                    </div>
+                @endif
+            </div>
+
+            {{-- ভর্তির আহ্বান --}}
+            <div class="relative overflow-hidden rounded-lg bg-[var(--site-brand)] p-6 text-white">
+                <div class="absolute inset-0 text-[var(--site-accent)] opacity-10" aria-hidden="true">
+                    <svg class="size-full"><rect width="100%" height="100%" fill="url(#girih)"/></svg>
+                </div>
+
+                <div class="relative">
+                    <h3 class="text-lg font-semibold text-balance">ভর্তি চলছে</h3>
+                    <p class="mt-2 text-sm text-pretty text-white/80">
+                        ভর্তির জন্য মাদরাসার কার্যালয়ে যোগাযোগ করুন। প্রয়োজনীয় কাগজপত্র সহ
+                        অভিভাবককে উপস্থিত থাকতে হবে।
+                    </p>
+
+                    <ul class="mt-5 space-y-2 text-sm text-white/85">
+                        @foreach (['জন্মনিবন্ধন সনদের কপি', 'পূর্ববর্তী মাদরাসার ছাড়পত্র', 'অভিভাবকের এনআইডি কপি', 'সদ্য তোলা ছবি ২ কপি'] as $item)
+                            <li class="flex gap-2">
+                                <span class="text-[var(--site-accent)]">◆</span>
+                                <span class="text-pretty">{{ $item }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    @if ($settings->phone)
+                        <a href="tel:{{ $settings->phone }}"
+                           class="mt-6 inline-block rounded bg-[var(--site-accent)] px-5 py-2.5 text-sm font-medium transition-opacity duration-150 hover:opacity-90">
+                            ফোন করুন — @bn($settings->phone)
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
