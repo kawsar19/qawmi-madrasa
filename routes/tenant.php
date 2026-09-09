@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Tenant\AdmissionFormPdfController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\LogoutController;
 use Illuminate\Support\Facades\Route;
@@ -74,6 +75,10 @@ Route::prefix('panel')->name('tenant.')->group(function () {
             Route::view('/admissions', 'tenant.people.admissions')
                 ->middleware('can:people.admission.view')
                 ->name('admissions');
+
+            Route::get('/admissions/{admission}/form.pdf', AdmissionFormPdfController::class)
+                ->middleware('can:people.admission.print')
+                ->name('admissions.form');
         });
     });
 });

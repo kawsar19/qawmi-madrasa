@@ -33,7 +33,7 @@ final class PermissionRegistry
                 self::crud('people.student', ['import', 'export', 'promote']),
                 self::crud('people.guardian'),
                 self::crud('people.employee'),
-                self::crud('people.admission', ['approve', 'enroll']),
+                self::crud('people.admission', ['approve', 'enroll', 'print']),
                 self::crud('people.id_card', ['print']),
             ),
 

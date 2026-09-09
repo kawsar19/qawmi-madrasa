@@ -293,6 +293,14 @@
                                     </div>
                                 @else
                                     <div class="flex items-center justify-end gap-1">
+                                        {{-- ভর্তি ফর্ম PDF — যেকোনো অবস্থাতেই ছাপা যায় --}}
+                                        @can('people.admission.print')
+                                            <a href="{{ route('tenant.people.admissions.form', $admission) }}"
+                                               title="ভর্তি ফর্ম PDF ডাউনলোড"
+                                               class="rounded px-2 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:bg-gray-100">
+                                                ফরম
+                                            </a>
+                                        @endcan
                                         @if ($admission->isPending())
                                             <button wire:click="approve({{ $admission->id }})"
                                                     class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700">

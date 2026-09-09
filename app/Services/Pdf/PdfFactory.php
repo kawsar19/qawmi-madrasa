@@ -43,7 +43,12 @@ class PdfFactory
             'margin_left' => 12,
             'margin_right' => 12,
 
-            'fontDir' => [...$fontDirs, storage_path('fonts')],
+            // base_path(), not storage_path(): FilesystemTenancyBootstrapper
+            // suffixes storage_path() per tenant, so inside a tenant request
+            // this would resolve to storage/tenant3/fonts — which does not
+            // exist, and mPDF aborts with "Cannot find TTF TrueType font
+            // file". The fonts are shipped code, shared by every madrasa.
+            'fontDir' => [...$fontDirs, base_path('storage/fonts')],
 
             // Only our own fonts are declared. Merging mPDF's default
             // `fontdata` map breaks Bengali BOLD text — mPDF then resolves
@@ -80,6 +85,8 @@ class PdfFactory
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
 
+            // Per-tenant on purpose — mPDF writes font caches here, and the
+            // tenant storage tree already exists (Media::prepareTenantStorage).
             'tempDir' => storage_path('app/mpdf'),
 
             ...$config,
