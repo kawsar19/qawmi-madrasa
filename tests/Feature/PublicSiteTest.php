@@ -262,3 +262,56 @@ it('falls back per page when a template lacks one', function () {
 
     tenancy()->end();
 });
+
+it('ships a modern template alongside classic', function () {
+    expect(SiteTemplate::installed())->toContain('modern')
+        ->and(SiteTemplate::available())->toHaveKey('modern');
+});
+
+it('every installed template provides all pages', function () {
+    // একটি টেমপ্লেটে কোনো পেজ না থাকলে classic থেকে আসে, কিন্তু নিজেরটাই
+    // থাকা উচিত — নইলে দুই টেমপ্লেটের চেহারা মাঝপথে মিশে যায়।
+    foreach (SiteTemplate::installed() as $template) {
+        foreach (SiteTemplate::PAGES as $page) {
+            expect(view()->exists("public.templates.{$template}.pages.{$page}"))
+                ->toBeTrue("{$template}/{$page} নেই");
+        }
+
+        expect(view()->exists("public.templates.{$template}.layout"))
+            ->toBeTrue("{$template}/layout নেই");
+    }
+});
+
+it('serves every page on the modern template', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+    SiteSetting::current()->update(['template' => 'modern']);
+    Notice::create([
+        'title' => 'মডার্ন নোটিশ',
+        'body' => 'বিবরণ।',
+        'is_published' => true,
+        'published_on' => now(),
+    ]);
+    tenancy()->end();
+
+    foreach (['/', '/porichiti', '/notice', '/notice/1', '/shikkhok', '/jogajog'] as $path) {
+        $this->get('http://darul-ulum.localhost'.$path)
+            ->assertOk()
+            ->assertSee('দারুল উলুম মাদরাসা');
+    }
+});
+
+it('renders modern markup, not classic, when selected', function () {
+    $tenant = siteTenant();
+
+    tenancy()->initialize($tenant);
+    SiteSetting::current()->update(['template' => 'modern']);
+    tenancy()->end();
+
+    // মডার্নের নিজস্ব ডট প্যাটার্ন আছে; ক্লাসিকের girih নেই।
+    $this->get('http://darul-ulum.localhost/')
+        ->assertOk()
+        ->assertSee('url(#dots)', false)
+        ->assertDontSee('url(#girih)', false);
+});

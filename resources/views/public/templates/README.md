@@ -3,10 +3,13 @@
 নতুন টেমপ্লেট বানাতে **PHP লিখতে হয় না** — শুধু Blade ফাইল।
 
 ```bash
-cp -r classic modern
-# তারপর modern/-এর ভেতরের 'public.templates.classic.' গুলো
-# 'public.templates.modern.' করে দিন, আর ক্লাস বদলান।
+cp -r classic heritage
+# তারপর heritage/-এর ভেতরের 'public.templates.classic.' গুলো
+# 'public.templates.heritage.' করে দিন, আর ক্লাস বদলান।
 ```
+
+এখন দুটি টেমপ্লেট আছে — `classic` (গম্ভীর, গাঢ় হেডার) ও `modern`
+(পরিষ্কার, সাদা হেডার)। যেটির চেহারা কাছাকাছি সেটি কপি করলে কাজ কম।
 
 `SiteTemplate::installed()` ফোল্ডার খুঁজে নেয়, তাই কপি করলেই
 প্যানেলের ড্রপডাউনে চলে আসে — রুট, কন্ট্রোলার বা মডেল অপরিবর্তিত।
@@ -52,3 +55,15 @@ cp -r classic modern
 `<x-site.heading>`, `<x-site.notice-row>`, `<x-site.teacher-card>`,
 `<x-site.page-header>`, `<x-site.empty>` — সব টেমপ্লেটে ব্যবহার করা যায়,
 অথবা নিজের বানিয়ে নিন।
+
+
+## সতর্কতা
+
+**Tailwind ক্লাস যাচাই করুন।** নতুন টেমপ্লেটের ক্লাসগুলো CSS-এ ঢুকেছে কিনা
+দেখতে `npm run build` চালান। `npm run dev` চালু থাকলে Vite নতুন ফোল্ডার
+সবসময় স্ক্যান করে না — তখন `public/hot` মুছে বিল্ড করা CSS ব্যবহার করুন।
+
+**`aspect-4/3` কাজ করে না** — Tailwind v4-এ `aspect-[4/3]` লিখতে হয়।
+
+**`col-span-*` এড়িয়ে যান** যেখানে সম্ভব; `grid-cols-[3fr_2fr]` বেশি
+নির্ভরযোগ্য, কারণ span ক্লাস JIT স্ক্যানে বাদ পড়তে পারে।
