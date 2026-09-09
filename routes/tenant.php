@@ -52,6 +52,10 @@ Route::prefix('panel')->name('tenant.')->group(function () {
             Route::view('/employees', 'tenant.people.employees')
                 ->middleware('can:people.employee.view')
                 ->name('employees');
+
+            Route::view('/admissions', 'tenant.people.admissions')
+                ->middleware('can:people.admission.view')
+                ->name('admissions');
         });
     });
 });

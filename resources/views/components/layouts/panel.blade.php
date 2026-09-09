@@ -52,7 +52,9 @@
                 <x-panel.nav-link :href="route('tenant.people.students')" :active="request()->routeIs('tenant.people.students')" icon="users">
                     ছাত্র
                 </x-panel.nav-link>
-                <x-panel.nav-link href="#" icon="user-plus">ভর্তি</x-panel.nav-link>
+                <x-panel.nav-link :href="route('tenant.people.admissions')" :active="request()->routeIs('tenant.people.admissions')" icon="user-plus">
+                    ভর্তি
+                </x-panel.nav-link>
                 <x-panel.nav-link :href="route('tenant.people.employees')" :active="request()->routeIs('tenant.people.employees')" icon="badge">
                     শিক্ষক ও কর্মচারী
                 </x-panel.nav-link>
