@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# ডেমো টানেল — নিজের মেশিন থেকে একটা পাবলিক URL।
+#
+#   ./deploy/tunnel.sh                 # সুপার অ্যাডমিন (central) দেখাবে
+#   ./deploy/tunnel.sh belashifm       # ওই মাদরাসার প্যানেল দেখাবে
+#
+# Cloudflare quick tunnel দেয় একটাই random hostname, wildcard নয়। অ্যাপ
+# tenant চেনে hostname দেখে (InitializeTenancyByDomain), আর
+# PreventAccessFromCentralDomains একটা hostname-কে central আর tenant দুটোই
+# হতে দেয় না — তাই এক টানেলে একটাই জিনিস দেখানো যায়।
+#
+# স্ক্রিপ্ট শেষ হলে .env আর domains টেবিল আগের অবস্থায় ফিরে যায়।
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+PORT="${PORT:-8000}"
+SLUG="${1:-}"
+ENV_BACKUP=".env.tunnel-backup"
+
+command -v cloudflared >/dev/null || { echo "cloudflared নেই: brew install cloudflared"; exit 1; }
+
+# ---- আগের অবস্থায় ফেরানো ---------------------------------------------------
+cleanup() {
+    echo ""
+    echo "==> গোছানো হচ্ছে"
+    [ -n "${TUNNEL_PID:-}" ] && kill "$TUNNEL_PID" 2>/dev/null || true
+    [ -n "${SERVE_PID:-}"  ] && kill "$SERVE_PID"  2>/dev/null || true
+
+    if [ -f "$ENV_BACKUP" ]; then
+        mv "$ENV_BACKUP" .env
+        echo "    .env ফেরত দেওয়া হয়েছে"
+    fi
+    if [ -n "$SLUG" ] && [ -n "${OLD_DOMAIN:-}" ]; then
+        php artisan tinker --execute="
+            \Stancl\Tenancy\Database\Models\Domain::where('domain', '${PUBLIC_HOST:-}')
+                ->update(['domain' => '$OLD_DOMAIN']);
+        " >/dev/null 2>&1 || true
+        echo "    domain ফেরত: $OLD_DOMAIN"
+    fi
+    php artisan config:clear >/dev/null 2>&1 || true
+}
+trap cleanup EXIT INT TERM
+
+# আগের কোনো crash-এর ব্যাকআপ পড়ে থাকলে সেটাই আসল .env — নাহলে এখনকার
+# (হয়তো টানেলের মান বসানো) .env দিয়ে সেটা ঢেকে ফেলব।
+if [ -f "$ENV_BACKUP" ]; then
+    echo "==> আগের ব্যাকআপ পাওয়া গেছে, .env ফেরত দেওয়া হচ্ছে"
+    mv "$ENV_BACKUP" .env
+fi
+
+cp .env "$ENV_BACKUP"
+
+# ---- টানেল চালু, URL ধরা ----------------------------------------------------
+echo "==> টানেল খোলা হচ্ছে..."
+LOG=$(mktemp)
+cloudflared tunnel --url "http://localhost:$PORT" --no-autoupdate >"$LOG" 2>&1 &
+TUNNEL_PID=$!
+
+PUBLIC_URL=""
+for _ in $(seq 1 30); do
+    PUBLIC_URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" | head -1 || true)
+    [ -n "$PUBLIC_URL" ] && break
+    sleep 1
+done
+[ -z "$PUBLIC_URL" ] && { echo "URL পাওয়া গেল না:"; cat "$LOG"; exit 1; }
+
+PUBLIC_HOST="${PUBLIC_URL#https://}"
+echo "==> $PUBLIC_URL"
+
+# ---- .env: টানেলের hostname চেনানো ------------------------------------------
+# APP_URL https, নাহলে asset() http:// লিংক বানায় আর ব্রাউজার mixed content
+# হিসেবে CSS/JS ব্লক করে — পেজ আসে সাদা।
+set_env() {  # key value
+    if grep -q "^$1=" .env; then
+        # | delimiter, কারণ value-তে / আছে
+        sed -i '' "s|^$1=.*|$1=$2|" .env
+    else
+        printf '%s=%s\n' "$1" "$2" >> .env
+    fi
+}
+
+set_env APP_URL "$PUBLIC_URL"
+set_env ASSET_URL "$PUBLIC_URL"
+
+if [ -z "$SLUG" ]; then
+    # central: টানেল hostname-কে central domain বানাই
+    set_env CENTRAL_DOMAINS "$PUBLIC_HOST,app.localhost,localhost,127.0.0.1"
+    ENTRY="$PUBLIC_URL/login"
+    WHAT="সুপার অ্যাডমিন"
+else
+    # tenant: central তালিকা থেকে টানেল hostname বাদ, আর ওই মাদরাসার
+    # domain সাময়িকভাবে টানেলের hostname করে দিই
+    set_env CENTRAL_DOMAINS "app.localhost,localhost,127.0.0.1"
+
+    OLD_DOMAIN=$(php artisan tinker --execute="
+        \$t = \App\Models\Central\Tenant::where('slug', '$SLUG')->first();
+        echo \$t ? optional(\$t->domains->first())->domain : '';
+    " 2>/dev/null | tail -1 | tr -d '[:space:]')
+
+    [ -z "$OLD_DOMAIN" ] && { echo "'$SLUG' নামে মাদরাসা পাওয়া যায়নি"; exit 1; }
+
+    php artisan tinker --execute="
+        \Stancl\Tenancy\Database\Models\Domain::where('domain', '$OLD_DOMAIN')
+            ->update(['domain' => '$PUBLIC_HOST']);
+    " >/dev/null
+    ENTRY="$PUBLIC_URL/panel/login"
+    WHAT="মাদরাসা: $SLUG"
+fi
+
+php artisan config:clear >/dev/null
+
+# ---- সার্ভার ----------------------------------------------------------------
+# --host 0.0.0.0 নয়: cloudflared একই মেশিন থেকেই কানেক্ট করে।
+php artisan serve --port="$PORT" >/dev/null 2>&1 &
+SERVE_PID=$!
+sleep 2
+
+cat <<INFO
+
+  ────────────────────────────────────────────────
+   $WHAT
+   $ENTRY
+
+   পাসওয়ার্ড: password
+   বন্ধ করতে: Ctrl+C
+  ────────────────────────────────────────────────
+
+INFO
+
+wait $TUNNEL_PID
