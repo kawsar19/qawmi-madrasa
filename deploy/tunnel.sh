@@ -26,6 +26,7 @@ cleanup() {
     echo "==> গোছানো হচ্ছে"
     [ -n "${TUNNEL_PID:-}" ] && kill "$TUNNEL_PID" 2>/dev/null || true
     [ -n "${SERVE_PID:-}"  ] && kill "$SERVE_PID"  2>/dev/null || true
+    [ -n "${CAFFEINE_PID:-}" ] && kill "$CAFFEINE_PID" 2>/dev/null || true
 
     if [ -f "$ENV_BACKUP" ]; then
         mv "$ENV_BACKUP" .env
@@ -50,6 +51,14 @@ if [ -f "$ENV_BACKUP" ]; then
 fi
 
 cp .env "$ENV_BACKUP"
+
+# ---- ঘুম আটকানো -------------------------------------------------------------
+# স্ক্রিপ্ট চলাকালীন মেশিন ঘুমালে টানেল আর সার্ভার দুটোই মরে যায় এবং
+# ফিরে আসে না। -i idle sleep, -m ডিস্ক, -s চার্জারে থাকা অবস্থায়।
+# ঢাকনা নামানো (clamshell) এতে আটকায় না — সেটা macOS ছাড়ে না।
+caffeinate -ims &
+CAFFEINE_PID=$!
+echo "==> ঘুম বন্ধ রাখা হচ্ছে (ঢাকনা খোলা রাখুন)"
 
 # ---- টানেল চালু, URL ধরা ----------------------------------------------------
 echo "==> টানেল খোলা হচ্ছে..."
