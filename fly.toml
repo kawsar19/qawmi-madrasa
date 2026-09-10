@@ -1,0 +1,57 @@
+# Fly.io — কওমি মাদরাসা ম্যানেজমেন্ট সিস্টেম
+#
+# Single machine on purpose: SQLite lives on a volume and a volume attaches
+# to exactly one machine. Do not raise the count without moving to Postgres.
+
+app = 'qawmi-madrasa'
+primary_region = 'sin'          # Singapore — nearest to Bangladesh
+
+[build]
+
+[env]
+  APP_ENV = 'production'
+  APP_DEBUG = 'false'
+  APP_LOCALE = 'bn'
+  APP_TIMEZONE = 'Asia/Dhaka'
+
+  DB_CONNECTION = 'sqlite'
+  DB_DATABASE = '/data/database.sqlite'
+  # Concurrent readers while a write is in flight; without WAL every read
+  # blocks on the writer and a busy invoice run stalls the panel.
+  DB_JOURNAL_MODE = 'wal'
+  DB_SYNCHRONOUS = 'normal'
+  DB_BUSY_TIMEOUT = '5000'
+
+  # Sessions and cache off SQLite — they are the hottest writers and each
+  # write locks the whole file. Files are per-machine, which is fine at one.
+  SESSION_DRIVER = 'file'
+  CACHE_STORE = 'file'
+  QUEUE_CONNECTION = 'database'
+
+  LOG_CHANNEL = 'stderr'
+  LOG_LEVEL = 'warning'
+
+  FILESYSTEM_DISK = 'local'
+  MEDIA_DISK = 'public'
+
+[[mounts]]
+  source = 'qawmi_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # The machine must stay up: it holds the volume, and a cold start would
+  # re-run migrations on the first visitor's request.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 40
+    soft_limit = 20
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'
