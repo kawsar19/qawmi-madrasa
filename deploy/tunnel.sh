@@ -17,6 +17,7 @@ cd "$(dirname "$0")/.."
 PORT="${PORT:-8000}"
 SLUG="${1:-}"
 ENV_BACKUP=".env.tunnel-backup"
+HOT_BACKUP="public/hot.tunnel-backup"
 
 command -v cloudflared >/dev/null || { echo "cloudflared নেই: brew install cloudflared"; exit 1; }
 
@@ -31,6 +32,10 @@ cleanup() {
     if [ -f "$ENV_BACKUP" ]; then
         mv "$ENV_BACKUP" .env
         echo "    .env ফেরত দেওয়া হয়েছে"
+    fi
+    if [ -f "$HOT_BACKUP" ]; then
+        mv "$HOT_BACKUP" public/hot
+        echo "    Vite dev mode ফেরত দেওয়া হয়েছে"
     fi
     if [ -n "$SLUG" ] && [ -n "${OLD_DOMAIN:-}" ]; then
         php artisan tinker --execute="
@@ -51,6 +56,20 @@ if [ -f "$ENV_BACKUP" ]; then
 fi
 
 cp .env "$ENV_BACKUP"
+
+# ---- অ্যাসেট ------------------------------------------------------------------
+# public/hot থাকলে @vite ফাইলগুলো Vite dev server (127.0.0.1:5173) থেকে
+# আনে। ফোনে 127.0.0.1 মানে ফোন নিজেই — সেখানে কিছু নেই, তাই পেজ আসে
+# স্টাইল ছাড়া। টানেলের সময় তাই বিল্ড করা ফাইলই ব্যবহার করি।
+if [ -f public/hot ]; then
+    mv public/hot "$HOT_BACKUP"
+    echo "==> Vite dev mode সরানো হলো (টানেলে বিল্ড করা অ্যাসেট লাগবে)"
+fi
+
+if [ ! -f public/build/manifest.json ]; then
+    echo "==> অ্যাসেট বিল্ড হচ্ছে (একবারই, একটু সময় লাগবে)..."
+    npm run build >/dev/null 2>&1 || { echo "npm run build ব্যর্থ"; exit 1; }
+fi
 
 # ---- ঘুম আটকানো -------------------------------------------------------------
 # স্ক্রিপ্ট চলাকালীন মেশিন ঘুমালে টানেল আর সার্ভার দুটোই মরে যায় এবং
