@@ -44,6 +44,12 @@ cleanup() {
         " >/dev/null 2>&1 || true
         echo "    domain ফেরত: $OLD_DOMAIN"
     fi
+    # .env ফেরত না গেলেও টানেলের মান যেন পড়ে না থাকে।
+    if grep -q 'trycloudflare\.com' .env 2>/dev/null; then
+        sed -i '' 's|^CENTRAL_DOMAINS=.*|CENTRAL_DOMAINS=app.localhost,localhost,127.0.0.1|' .env
+        sed -i '' "s|^APP_URL=.*|APP_URL=http://app.localhost:$PORT|" .env
+        sed -i '' '/^ASSET_URL=/d' .env
+    fi
     php artisan config:clear >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
@@ -55,7 +61,40 @@ if [ -f "$ENV_BACKUP" ]; then
     mv "$ENV_BACKUP" .env
 fi
 
+# ব্যাকআপ নিজেও যদি আগের কোনো crash-এ টানেলের মান নিয়ে জমে থাকে, সেটা
+# বারবার ফিরে আসবে। মরা টানেলের URL মুছে লোকাল অবস্থায় ফেরাই।
+if grep -q 'trycloudflare\.com' .env; then
+    echo "==> .env-এ পুরনো টানেলের মান ছিল, লোকাল অবস্থায় ফেরানো হচ্ছে"
+    sed -i '' 's|^CENTRAL_DOMAINS=.*|CENTRAL_DOMAINS=app.localhost,localhost,127.0.0.1|' .env
+    sed -i '' "s|^APP_URL=.*|APP_URL=http://app.localhost:$PORT|" .env
+    sed -i '' '/^ASSET_URL=/d' .env
+fi
+
 cp .env "$ENV_BACKUP"
+
+# ---- পথ পরিষ্কার --------------------------------------------------------------
+# `composer dev` / `npm run dev` চললে দুটো সমস্যা: ওরা $PORT দখল করে রাখে,
+# আর Vite নতুন করে public/hot লিখে দেয় — তখন @vite আবার 127.0.0.1:5173 এ
+# পাঠায় আর ফোনে স্টাইল আসে না। তাই টানেলের আগে ওগুলো থামাতেই হবে।
+if lsof -ti:5173 >/dev/null 2>&1 || lsof -ti:"$PORT" >/dev/null 2>&1; then
+    echo "==> dev server চলছে — টানেলের জন্য থামাতে হবে"
+    printf "    থামিয়ে এগোব? [y/N] "
+    read -r reply
+    case "$reply" in
+        [yY]*)
+            pkill -f "artisan serve"  2>/dev/null || true
+            pkill -f "@laravel/multiplex" 2>/dev/null || true
+            pkill -f "npm run dev"    2>/dev/null || true
+            pkill -f "vite"           2>/dev/null || true
+            sleep 3
+            echo "    থামানো হয়েছে"
+            ;;
+        *)
+            echo "    বাতিল। নিজে থামিয়ে আবার চালান।"
+            exit 1
+            ;;
+    esac
+fi
 
 # ---- অ্যাসেট ------------------------------------------------------------------
 # public/hot থাকলে @vite ফাইলগুলো Vite dev server (127.0.0.1:5173) থেকে
