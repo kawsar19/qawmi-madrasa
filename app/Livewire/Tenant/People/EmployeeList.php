@@ -8,6 +8,7 @@ use App\Models\People\Employee;
 use App\Services\People\EmployeeRegistrar;
 use App\Support\Media;
 use App\Support\PermissionRegistry;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -446,13 +447,7 @@ class EmployeeList extends Component
         return Employee::query()
             ->with('user')
             ->when($this->search !== '', function ($query): void {
-                $term = '%'.$this->search.'%';
-                $query->where(function ($inner) use ($term): void {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('employee_uid', 'like', $term)
-                        ->orWhere('father_name', 'like', $term)
-                        ->orWhere('mobile', 'like', $term);
-                });
+                Search::anyOf($query, ['name', 'employee_uid', 'father_name', 'mobile'], Search::term($this->search));
             })
             ->when($this->filterType !== '', fn ($query) => $query->where('type', $this->filterType))
             ->when($this->filterStatus !== '', fn ($query) => $query->where('status', $this->filterStatus))

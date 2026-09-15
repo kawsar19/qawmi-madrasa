@@ -6,13 +6,16 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\Process;
 
 /**
  * `php artisan db:backup` — ডেটাবেসের একটি টাইমস্ট্যাম্প করা কপি রাখে।
  *
  * Exists because `migrate:fresh` drops every table with no undo and the dev
- * SQLite file is gitignored, so a mistaken rebuild is unrecoverable. Cheap
- * insurance: one file copy.
+ * database is gitignored, so a mistaken rebuild is unrecoverable.
+ *
+ * SQLite-এ এটা একটা ফাইল কপি; Postgres-এ `pg_dump`. দুই ক্ষেত্রেই ফাইল
+ * যায় storage/backups/-এ, আর `db:restore` সেখান থেকেই ফেরায়।
  */
 class DbBackup extends Command
 {
@@ -22,36 +25,100 @@ class DbBackup extends Command
 
     public function handle(): int
     {
-        $database = config('database.default');
+        $connection = config('database.default');
 
-        if ($database !== 'sqlite') {
-            $this->error("db:backup শুধু sqlite-এর জন্য। বর্তমান কানেকশন: {$database}");
+        $directory = storage_path('backups');
+        File::ensureDirectoryExists($directory);
+
+        $stamp = now()->format('Y-m-d_His');
+
+        $result = match ($connection) {
+            'sqlite' => $this->backupSqlite($directory, $stamp),
+            'pgsql' => $this->backupPostgres($directory, $stamp),
+            default => null,
+        };
+
+        if ($result === null) {
+            $this->error("db:backup শুধু sqlite ও pgsql-এর জন্য। বর্তমান কানেকশন: {$connection}");
 
             return self::FAILURE;
         }
 
+        if ($result === false) {
+            return self::FAILURE;
+        }
+
+        $this->info('✓ ব্যাকআপ: '.$result);
+        $this->line('  আকার: '.number_format(File::size($result) / 1024, 1).' KB');
+
+        $this->prune($directory, (int) $this->option('keep'));
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * SQLite — ফাইলটাই কপি।
+     *
+     * @return string|false সফল হলে ব্যাকআপের পথ
+     */
+    private function backupSqlite(string $directory, string $stamp): string|false
+    {
         /** @var string $source */
         $source = config('database.connections.sqlite.database');
 
         if (! File::exists($source)) {
             $this->error("ডেটাবেস ফাইল পাওয়া যায়নি: {$source}");
 
-            return self::FAILURE;
+            return false;
         }
 
-        $directory = storage_path('backups');
-        File::ensureDirectoryExists($directory);
-
-        $target = $directory.'/database-'.now()->format('Y-m-d_His').'.sqlite';
+        $target = $directory.'/database-'.$stamp.'.sqlite';
 
         File::copy($source, $target);
 
-        $this->info('✓ ব্যাকআপ: '.$target);
-        $this->line('  আকার: '.number_format(File::size($target) / 1024, 1).' KB');
+        return $target;
+    }
 
-        $this->prune($directory, (int) $this->option('keep'));
+    /**
+     * Postgres — pg_dump-এর custom format (-Fc), কারণ সেটা pg_restore-এ
+     * বেছে বেছে ফেরানো যায় এবং নিজেই compressed.
+     *
+     * @return string|false সফল হলে ব্যাকআপের পথ
+     */
+    private function backupPostgres(string $directory, string $stamp): string|false
+    {
+        $target = $directory.'/database-'.$stamp.'.dump';
 
-        return self::SUCCESS;
+        /** @var array{host?: string, port?: string|int, database?: string, username?: string, password?: string} $config */
+        $config = config('database.connections.pgsql');
+
+        $process = new Process([
+            'pg_dump',
+            '--format=custom',
+            '--no-owner',
+            '--no-privileges',
+            '--file='.$target,
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.(string) ($config['port'] ?? '5432'),
+            '--username='.($config['username'] ?? ''),
+            $config['database'] ?? '',
+        ], env: ['PGPASSWORD' => (string) ($config['password'] ?? '')] + $_ENV);
+
+        // বড় ডেটাবেসে ডাম্প সময় নিতে পারে; ডিফল্ট ৬০ সেকেন্ড যথেষ্ট নয়।
+        $process->setTimeout(300);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $this->error('pg_dump ব্যর্থ হয়েছে:');
+            $this->line('  '.trim($process->getErrorOutput()));
+
+            // অসম্পূর্ণ ফাইল রেখে দিলে পরে সেটাই "ব্যাকআপ" ভেবে ফেরানো হতে পারে।
+            File::delete($target);
+
+            return false;
+        }
+
+        return $target;
     }
 
     /**
@@ -63,7 +130,7 @@ class DbBackup extends Command
             return;
         }
 
-        $backups = collect(File::glob($directory.'/database-*.sqlite'))
+        $backups = collect(File::glob($directory.'/database-*.{sqlite,dump}', GLOB_BRACE))
             ->sortDesc()
             ->values();
 

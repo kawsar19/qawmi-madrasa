@@ -10,6 +10,7 @@ use App\Models\People\Admission;
 use App\Models\People\Student;
 use App\Services\Academic\CurrentSession;
 use App\Services\People\AdmissionService;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -459,13 +460,7 @@ class AdmissionList extends Component
             ->with(['jamaat.marhala', 'student'])
             ->when($session !== null, fn ($query) => $query->where('academic_session_id', $session->id))
             ->when($this->search !== '', function ($query): void {
-                $term = '%'.$this->search.'%';
-                $query->where(function ($inner) use ($term): void {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('application_no', 'like', $term)
-                        ->orWhere('father_name', 'like', $term)
-                        ->orWhere('mobile', 'like', $term);
-                });
+                Search::anyOf($query, ['name', 'application_no', 'father_name', 'mobile'], Search::term($this->search));
             })
             ->when($this->filterStatus !== '', fn ($query) => $query->where('status', $this->filterStatus))
             ->when($this->filterJamaat !== '', fn ($query) => $query->where('jamaat_id', (int) $this->filterJamaat))

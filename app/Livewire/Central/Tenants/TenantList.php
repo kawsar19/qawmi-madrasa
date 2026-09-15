@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Central\Tenants;
 
 use App\Models\Central\Tenant;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -59,12 +60,7 @@ class TenantList extends Component
         return Tenant::query()
             ->with(['domains', 'subscriptions' => fn ($q) => $q->latest('ends_at')->limit(1)])
             ->when($this->search !== '', function (Builder $query): void {
-                $term = '%'.$this->search.'%';
-                $query->where(function (Builder $q) use ($term): void {
-                    $q->where('name', 'like', $term)
-                        ->orWhere('slug', 'like', $term)
-                        ->orWhere('eiin', 'like', $term);
-                });
+                Search::anyOf($query, ['name', 'slug', 'eiin'], Search::term($this->search));
             })
             ->when($this->status !== '', fn (Builder $q) => $q->where('status', $this->status))
             ->latest('id')

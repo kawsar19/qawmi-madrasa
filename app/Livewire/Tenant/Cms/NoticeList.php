@@ -6,6 +6,7 @@ namespace App\Livewire\Tenant\Cms;
 
 use App\Models\Cms\Notice;
 use App\Support\Media;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -204,10 +205,7 @@ class NoticeList extends Component
     {
         return Notice::query()
             ->when($this->search !== '', function ($query): void {
-                $term = '%'.$this->search.'%';
-                $query->where(function ($inner) use ($term): void {
-                    $inner->where('title', 'like', $term)->orWhere('body', 'like', $term);
-                });
+                Search::anyOf($query, ['title', 'body'], Search::term($this->search));
             })
             ->when($this->filterCategory !== '', fn ($query) => $query->where('category', $this->filterCategory))
             ->ranked()

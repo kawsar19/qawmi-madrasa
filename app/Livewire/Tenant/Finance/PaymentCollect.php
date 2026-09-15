@@ -9,6 +9,7 @@ use App\Models\Finance\Payment;
 use App\Models\People\Student;
 use App\Services\Academic\CurrentSession;
 use App\Services\Finance\PaymentCollector;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -196,15 +197,12 @@ class PaymentCollect extends Component
             return new Collection;
         }
 
-        $term = '%'.$this->search.'%';
+        $term = Search::term($this->search);
 
         return Student::query()
             ->active()
             ->where(function ($query) use ($term): void {
-                $query->where('name', 'like', $term)
-                    ->orWhere('student_uid', 'like', $term)
-                    ->orWhere('father_name', 'like', $term)
-                    ->orWhere('mobile', 'like', $term);
+                Search::anyOf($query, ['name', 'student_uid', 'father_name', 'mobile'], $term);
             })
             ->orderBy('name')
             ->limit(10)

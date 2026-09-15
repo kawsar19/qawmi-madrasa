@@ -10,6 +10,7 @@ use App\Models\People\Enrollment;
 use App\Models\People\Student;
 use App\Services\Academic\CurrentSession;
 use App\Services\People\StudentRegistrar;
+use App\Support\Search;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -352,13 +353,7 @@ class StudentList extends Component
                 $query->where('academic_session_id', $sessionId)->with(['jamaat', 'section']);
             }])
             ->when($this->search !== '', function ($query): void {
-                $term = '%'.$this->search.'%';
-                $query->where(function ($inner) use ($term): void {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('student_uid', 'like', $term)
-                        ->orWhere('father_name', 'like', $term)
-                        ->orWhere('mobile', 'like', $term);
-                });
+                Search::anyOf($query, ['name', 'student_uid', 'father_name', 'mobile'], Search::term($this->search));
             })
             ->when($this->filterJamaat !== '', function ($query) use ($sessionId): void {
                 $query->whereHas('enrollments', function ($inner) use ($sessionId): void {

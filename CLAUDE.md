@@ -38,7 +38,7 @@ A madrasa admin cannot log in on the central domain, and vice versa.
 ```bash
 php artisan migrate                # apply new migrations (keeps data)
 php artisan db:show                # browse tables, columns and data (read-only)
-php artisan db:backup              # timestamped copy -> storage/backups/
+php artisan db:backup              # timestamped copy -> storage/backups/ (sqlite + pgsql)
 php artisan db:restore             # bring one back (interactive picker)
 php artisan migrate:fresh --seed   # DESTRUCTIVE rebuild — ask the user first
 php artisan dev:info               # login URLs and demo accounts
@@ -151,6 +151,11 @@ Verified visually via `php artisan pdf:spike` — re-run it after any font chang
   ±offset exists.
 - Receipts are **cancelled, never deleted** — the donor holds a paper copy.
 - Mobile numbers are not globally unique; siblings share one.
+- **Never `->where($col, 'like', ...)` for a user-facing search.** SQLite's
+  `LIKE` is case-insensitive, Postgres' is not, so "abdul" stops matching
+  "Abdul" the moment prod runs on Postgres — and the tests, which run on
+  SQLite, never catch it. Use `App\Support\Search`, which picks `ilike` or
+  `like` from the driver and escapes the `%`/`_` a user typed.
 
 ## Layout
 
