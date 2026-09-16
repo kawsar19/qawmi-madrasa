@@ -76,6 +76,25 @@ php artisan migrate --force --no-interaction
 # Reconcile PermissionRegistry against the DB; new permissions ship in code.
 php artisan permissions:sync --no-interaction || true
 
+# ---- first super admin -----------------------------------------------------
+# DatabaseSeeder returns early on production by design, so a freshly migrated
+# production database has nobody who can log in. On a host with a shell you
+# would run `php artisan admin:create` once; where there is no shell (Render's
+# free plan) set these two variables instead, deploy, log in, then DELETE them
+# — they are only read here, and leaving the password in the service
+# environment is what turns a one-time bootstrap into a standing credential.
+#
+# --if-missing keeps redeploys idempotent: without it the second boot fails
+# validation on the duplicate email and takes the whole deploy down.
+if [ -n "$SUPER_ADMIN_EMAIL" ] && [ -n "$SUPER_ADMIN_PASSWORD" ]; then
+    php artisan admin:create \
+        --email="$SUPER_ADMIN_EMAIL" \
+        --password="$SUPER_ADMIN_PASSWORD" \
+        --name="${SUPER_ADMIN_NAME:-সুপার অ্যাডমিন}" \
+        --if-missing \
+        --no-interaction || true
+fi
+
 # public/storage + public/storage/tenants/{id} symlinks, recreated because
 # public/ is rebuilt on every deploy while the volume keeps the files.
 php artisan storage:link --force --no-interaction || true
