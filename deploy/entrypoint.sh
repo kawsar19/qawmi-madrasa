@@ -38,11 +38,29 @@ cp -f /usr/local/share/qawmi-fonts/*.txt "$DATA/storage/fonts/" 2>/dev/null || t
 # mPDF writes parsed font metrics next to the fonts; it must be writable.
 mkdir -p "$DATA/storage/fonts/ttfontdata" "$DATA/storage/app/mpdf"
 
+# ---- database --------------------------------------------------------------
+# Render (and Heroku, and most managed Postgres) publishes one DATABASE_URL.
+# Laravel only ever looks at DB_URL, so without this bridge DB_HOST keeps its
+# config/database.php default of 127.0.0.1 and migrations die with
+# "connection to server at 127.0.0.1 port 5432 failed: Connection refused" —
+# the container dialling itself. Fly sets no DATABASE_URL, so this is a no-op
+# there. An explicit DB_URL always wins.
+if [ -n "$DATABASE_URL" ] && [ -z "$DB_URL" ]; then
+    echo "==> using DATABASE_URL for the database connection"
+    export DB_URL="$DATABASE_URL"
+    export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+fi
+
 # ---- SQLite ----------------------------------------------------------------
-DB_FILE="${DB_DATABASE:-$DATA/database.sqlite}"
-if [ ! -f "$DB_FILE" ]; then
-    echo "==> creating fresh database at $DB_FILE"
-    touch "$DB_FILE"
+# Only when actually running SQLite: under pgsql, DB_DATABASE is a database
+# *name* ("qawmi"), and touching it would litter the app root with a stray
+# file instead of creating anything useful.
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ] && [ -z "$DB_URL" ]; then
+    DB_FILE="${DB_DATABASE:-$DATA/database.sqlite}"
+    if [ ! -f "$DB_FILE" ]; then
+        echo "==> creating fresh database at $DB_FILE"
+        touch "$DB_FILE"
+    fi
 fi
 
 chown -R nginx:nginx "$DATA" /var/www/html/bootstrap/cache
