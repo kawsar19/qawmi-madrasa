@@ -24,14 +24,17 @@ FROM php:8.4-fpm-alpine
 # intl — Carbon/HijriDate formatting.
 # zip  — composer install from cached archives.
 # pdo_sqlite is compiled in by default but sqlite3 dev headers are needed.
+# pdo_pgsql — Render/managed Postgres. Without it DB_CONNECTION=pgsql dies
+# at boot with "could not find driver", which is not obvious from the logs.
 RUN apk add --no-cache \
         nginx supervisor \
-        freetype libjpeg-turbo libpng libwebp icu-libs sqlite-libs \
+        freetype libjpeg-turbo libpng libwebp icu-libs sqlite-libs libzip \
+        libpq \
     && apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS freetype-dev libjpeg-turbo-dev libpng-dev libwebp-dev \
-        icu-dev sqlite-dev libzip-dev \
+        icu-dev sqlite-dev libzip-dev postgresql-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j"$(nproc)" gd intl zip pdo_sqlite opcache \
+    && docker-php-ext-install -j"$(nproc)" gd intl zip pdo_sqlite pdo_pgsql opcache \
     && apk del .build-deps
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -46,6 +49,19 @@ RUN composer install \
         --prefer-dist --no-interaction --no-progress
 
 COPY . .
+
+# .dockerignore drops the framework cache directories (they hold local dev
+# state), and a directory excluded there is absent from the image entirely,
+# not merely empty. Blade's compiler resolves view.compiled at boot, so
+# without storage/framework/views the very next line dies with
+# "Please provide a valid cache path" — package:discover boots the framework.
+# The Fly volume replaces storage/ at runtime; this is only for build time.
+RUN mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/app/public \
+        storage/logs
 
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
