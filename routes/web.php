@@ -20,35 +20,45 @@ use Illuminate\Support\Facades\Route;
 | method + URI) and the one registered last would silently replace the other —
 | routes/tenant.php is registered later, on app boot.
 |
+| The route *names* are attached on the first pass only. A name may be
+| serialized once, so naming every pass makes `php artisan route:cache` abort
+| with "Another route has already been assigned name [home]" the moment a
+| second central domain exists — which is what broke the first Render deploy.
+| The later passes still register working, reachable routes; they just cannot
+| be the target of route('home'), and route() returns the first domain's URL.
+|
 */
 
-foreach (config('tenancy.central_domains') as $centralDomain) {
-    Route::domain($centralDomain)->group(function () {
-        Route::get('/', LandingController::class)->name('home');
+foreach (config('tenancy.central_domains') as $i => $centralDomain) {
+    // Only the first pass names its routes; see the note above.
+    $name = fn (string $n): ?string => $i === 0 ? $n : null;
 
-        Route::middleware('guest')->group(function () {
-            Route::view('/login', 'central.auth.login')->name('central.login');
+    Route::domain($centralDomain)->group(function () use ($name) {
+        Route::get('/', LandingController::class)->name($name('home'));
+
+        Route::middleware('guest')->group(function () use ($name) {
+            Route::view('/login', 'central.auth.login')->name($name('central.login'));
         });
 
         Route::post('/logout', LogoutController::class)
             ->middleware('auth')
-            ->name('central.logout');
+            ->name($name('central.logout'));
 
         Route::prefix('admin')
-            ->name('central.')
+            ->name($name('central.'))
             ->middleware(['auth', 'super-admin'])
-            ->group(function () {
-                Route::get('/', DashboardController::class)->name('dashboard');
+            ->group(function () use ($name) {
+                Route::get('/', DashboardController::class)->name($name('dashboard'));
 
-                Route::prefix('tenants')->name('tenants.')->group(function () {
-                    Route::view('/', 'central.tenants.index')->name('index');
-                    Route::view('/create', 'central.tenants.create')->name('create');
+                Route::prefix('tenants')->name($name('tenants.'))->group(function () use ($name) {
+                    Route::view('/', 'central.tenants.index')->name($name('index'));
+                    Route::view('/create', 'central.tenants.create')->name($name('create'));
                     Route::get('/{tenant}/edit', fn (Tenant $tenant) => view('central.tenants.edit', ['tenant' => $tenant]))
-                        ->name('edit');
+                        ->name($name('edit'));
                 });
 
-                Route::view('/plans', 'central.plans.index')->name('plans.index');
-                Route::view('/subscriptions', 'central.subscriptions.index')->name('subscriptions.index');
+                Route::view('/plans', 'central.plans.index')->name($name('plans.index'));
+                Route::view('/subscriptions', 'central.subscriptions.index')->name($name('subscriptions.index'));
             });
     });
 }
