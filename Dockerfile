@@ -16,7 +16,9 @@ COPY resources ./resources
 RUN npm run build
 
 # ---------- stage 2: application ----------
-FROM php:8.3-fpm-alpine
+# 8.4, not 8.3: composer.lock pins Symfony 8.1, which requires php >= 8.4.1.
+# Building on 8.3 fails at composer install with seventeen version conflicts.
+FROM php:8.4-fpm-alpine
 
 # gd  — mPDF renders the QR codes and any raster logo on a receipt.
 # intl — Carbon/HijriDate formatting.
